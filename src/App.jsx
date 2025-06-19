@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+//const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles } from 'lucide-react';
 
