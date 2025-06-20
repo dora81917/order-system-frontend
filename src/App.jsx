@@ -1,6 +1,5 @@
-//const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles } from 'lucide-react';
+import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users } from 'lucide-react';
 
 // --- 環境變數設定 ---
 // 這一行是 Vite 專案讀取環境變數的標準方式。
@@ -8,7 +7,6 @@ import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles } from 'luc
 // 在某些非 Vite 的程式碼檢查工具中 (例如本預覽環境)，可能會看到一個關於 `import.meta` 的 "WARNING" (警告)，
 // 這是因為該工具不認識 Vite 的語法。這個警告是正常的，並不會影響您在本機開發或線上部署的實際運行。
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
-
 
 // --- i18n 多國語言資料 ---
 const translations = {
@@ -22,8 +20,9 @@ const translations = {
     cart: "您的訂單",
     emptyCart: "您的購物車是空的",
     notes: "備註",
-    notesPlaceholder: "有什麼特別需求嗎？ (例如：不要香菜)",
+    notesPlaceholder: "有什麼特別需求嗎？",
     table: "桌號",
+    headcount: "用餐人數",
     submitOrder: "送出訂單",
     orderSuccess: "下單成功！",
     orderFail: "下單失敗，請稍後再試。",
@@ -31,13 +30,12 @@ const translations = {
     aiRecommendation: "AI 智慧推薦",
     aiThinking: "AI小助手正在為您思考...",
     options: {
-      spice: { name: "辣度", none: "不辣", mild: "小辣", medium: "中辣", hot: "大辣" },
-      sugar: { name: "甜度", full: "正常糖", less: "少糖", half: "半糖", quarter: "微糖", none: "無糖" },
-      ice: { name: "冰塊", regular: "正常冰", less: "少冰", none: "去冰" },
-      size: { name: "份量", small: "小份", large: "大份" },
+        spice: { name: "辣度", none: "不辣", mild: "小辣", medium: "中辣", hot: "大辣" },
+        sugar: { name: "甜度", full: "正常糖", less: "少糖", half: "半糖", quarter: "微糖", none: "無糖" },
+        ice: { name: "冰塊", regular: "正常冰", less: "少冰", none: "去冰" },
+        size: { name: "份量", small: "小份", large: "大份" },
     },
   },
-  // ... 其他語言的翻譯 ...
   en: {
     language: "English",
     menu: "Menu",
@@ -48,21 +46,22 @@ const translations = {
     cart: "Your Order",
     emptyCart: "Your cart is empty",
     notes: "Notes",
-    notesPlaceholder: "Any special requests? (e.g., no cilantro)",
+    notesPlaceholder: "Any special requests?",
     table: "Table",
+    headcount: "Guests",
     submitOrder: "Submit Order",
     orderSuccess: "Order placed successfully!",
     orderFail: "Order failed, please try again later.",
     getRecommendation: "✨ Get AI Recommendations",
     aiRecommendation: "AI Smart Recommendation",
     aiThinking: "AI assistant is thinking for you...",
-     options: {
-      spice: { name: "Spice Level", none: "Not Spicy", mild: "Mild", medium: "Medium", hot: "Hot" },
-      sugar: { name: "Sugar Level", full: "Normal", less: "Less Sugar", half: "Half Sugar", quarter: "Quarter Sugar", none: "Sugar-Free" },
-      ice: { name: "Ice Level", regular: "Regular Ice", less: "Less Ice", none: "No Ice" },
-      size: { name: "Size", small: "Small", large: "Large" },
+    options: {
+        spice: { name: "Spice Level", none: "Not Spicy", mild: "Mild", medium: "Medium", hot: "Hot" },
+        sugar: { name: "Sugar Level", full: "Normal", less: "Less Sugar", half: "Half Sugar", quarter: "Quarter Sugar", none: "Sugar-Free" },
+        ice: { name: "Ice Level", regular: "Regular Ice", less: "Less Ice", none: "No Ice" },
+        size: { name: "Size", small: "Small", large: "Large" },
     },
-  },
+   },
 };
 
 
@@ -70,29 +69,28 @@ const translations = {
 export default function App() {
   const [lang, setLang] = useState('zh');
   const [cart, setCart] = useState([]);
-  const [menuData, setMenuData] = useState({ main: [], side: [], drink: [], dessert: [] });
+  const [menuData, setMenuData] = useState(null); // *** 修改：初始值改為 null ***
   const [selectedItem, setSelectedItem] = useState(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isAiEnabled, setIsAiEnabled] = useState(false); // AI 功能開關
+  const [isAiEnabled, setIsAiEnabled] = useState(false);
+  const [headcount, setHeadcount] = useState(1); // *** 新增：用餐人數狀態 ***
 
   const t = useMemo(() => translations[lang] || translations.en, [lang]);
 
-  // 從後端獲取菜單和設定
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 獲取菜單
-        const menuRes = await fetch(`${API_URL}/api/menu`);
+        const [menuRes, settingsRes] = await Promise.all([
+          fetch(`${API_URL}/api/menu`),
+          fetch(`${API_URL}/api/settings`)
+        ]);
         const menu = await menuRes.json();
-        setMenuData(menu);
-        
-        // 獲取 AI 設定 (管理者開關)
-        const settingsRes = await fetch(`${API_URL}/api/settings`);
         const settings = await settingsRes.json();
+        setMenuData(menu);
         setIsAiEnabled(settings.isAiEnabled);
-
       } catch (error) {
         console.error("無法從後端獲取資料:", error);
+        setMenuData({}); // 發生錯誤時給一個空物件，避免崩潰
       }
     };
     fetchData();
@@ -103,7 +101,7 @@ export default function App() {
   };
 
   const scrollToCategory = (categoryId) => {
-    categoryRefs[categoryId].current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    categoryRefs[categoryId].current.scrollIntoView({ behavior: 'smooth' });
   };
   
   const handleAddToCart = (item, options, notes) => {
@@ -120,94 +118,71 @@ export default function App() {
     setCart(cart => cart.filter(item => item.cartId !== cartId));
   };
   
-  // *** 新增：送出訂單的處理函式 ***
   const handleSubmitOrder = async () => {
     if (cart.length === 0) return;
-
     const orderData = {
-      tableNumber: "A1", // 暫時寫死，未來應從網址參數獲取
+      tableNumber: "A1",
+      headcount: headcount, // *** 新增：送出用餐人數 ***
       totalAmount: totalAmount,
-      items: cart.map(item => ({
-        id: item.id,
-        quantity: item.quantity,
-        notes: item.notes || "",
-        // 如果需要，也可以傳送客製化選項
-      }))
+      items: cart.map(item => ({ id: item.id, quantity: item.quantity, notes: item.notes || "" }))
     };
 
     try {
       const response = await fetch(`${API_URL}/api/orders`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData),
       });
-
-      if (!response.ok) {
-        throw new Error('伺服器回應錯誤');
-      }
-
+      if (!response.ok) throw new Error('伺服器回應錯誤');
       const result = await response.json();
       console.log('訂單成功送出:', result);
-      alert(t.orderSuccess); // 暫用 alert，未來可換成更美觀的提示框
-      setCart([]); // 清空購物車
-      setIsCartOpen(false); // 關閉購物車
-
+      alert(t.orderSuccess);
+      setCart([]);
+      setIsCartOpen(false);
     } catch (error) {
       console.error('送出訂單失敗:', error);
       alert(t.orderFail);
     }
   };
 
-
   const totalAmount = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
   const totalItems = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
   
-  const LanguageSwitcher = () => (
-    <div className="relative">
-      <select value={lang} onChange={(e) => setLang(e.target.value)} className="appearance-none bg-white bg-opacity-80 backdrop-blur-sm text-gray-800 font-semibold py-2 px-4 pr-8 rounded-full shadow-md focus:outline-none">
-        {Object.keys(translations).map(key => (<option key={key} value={key}>{translations[key].language}</option>))}
-      </select>
-      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700"><ChevronDown size={20} /></div>
-    </div>
-  );
-
   return (
     <div className="bg-gray-100 min-h-screen font-sans">
       <header className="sticky top-0 z-20 bg-white bg-opacity-80 backdrop-blur-md shadow-sm p-4 flex justify-between items-center">
-        <LanguageSwitcher />
+        <LanguageSwitcher lang={lang} setLang={setLang} t={t} />
         <div className="text-center">
             <div className="font-bold text-lg text-gray-800">{t.menu}</div>
             <div className="text-sm text-gray-500">{t.table}: A1</div>
         </div>
-        <div className="text-right text-gray-800 font-bold" onClick={() => setIsCartOpen(true)}>${totalAmount}</div>
+        {/* *** 新增：用餐人數選擇器 *** */}
+        <HeadcountSelector headcount={headcount} setHeadcount={setHeadcount} t={t} />
       </header>
       
-      <nav className="sticky top-[72px] z-20 bg-white/90 backdrop-blur-md shadow-sm overflow-x-auto">
+      <nav className="sticky top-[76px] z-20 bg-white/90 backdrop-blur-md shadow-sm overflow-x-auto">
         <div className="flex justify-center items-center space-x-2 sm:space-x-6 px-4">
-          {Object.keys(t.categories).map(key => (<button key={key} onClick={() => scrollToCategory(key)} className="py-3 px-2 sm:px-4 text-sm sm:text-base font-semibold text-gray-600 whitespace-nowrap hover:text-orange-500 focus:text-orange-500 border-b-2 border-transparent focus:border-orange-500 transition-colors duration-200">{t.categories[key]}</button>))}
+          {menuData && Object.keys(menuData).map(key => (<button key={key} onClick={() => scrollToCategory(key)} className="py-3 px-2 sm:px-4 text-sm sm:text-base font-semibold text-gray-600 whitespace-nowrap hover:text-orange-500 focus:text-orange-500 border-b-2 border-transparent focus:border-orange-500 transition-colors duration-200">{translations[lang]?.categories[key] || key}</button>))}
         </div>
       </nav>
 
       <main className="p-4 max-w-2xl mx-auto">
-        {Object.keys(menuData).map(categoryKey => (
-          <section key={categoryKey} ref={categoryRefs[categoryKey]} className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4 pt-4">{t.categories[categoryKey]}</h2>
-            <div className="space-y-4">
-              {(menuData[categoryKey] || []).map(item => (
-                <div key={item.id} className="bg-white rounded-xl shadow-md overflow-hidden flex cursor-pointer hover:shadow-lg transition-shadow duration-300" onClick={() => setSelectedItem(item)}>
-                  <div className="flex-1 p-4">
-                    <h3 className="font-bold text-lg text-gray-900">{item.name?.[lang] || item.name?.zh}</h3>
-                    <p className="text-gray-600 text-sm mt-1">{item.description?.[lang] || item.description?.zh}</p>
-                    <p className="font-semibold text-orange-500 mt-2">${item.price}</p>
-                  </div>
-                  <img src={item.image} alt={item.name?.[lang] || item.name?.zh} className="w-32 h-32 object-cover"/>
-                </div>
-              ))}
-            </div>
-          </section>
-        ))}
+        {/* *** 修改：加入骨架屏邏輯 *** */}
+        {!menuData ? (
+          <MenuSkeleton />
+        ) : (
+          Object.keys(menuData).map(categoryKey => (
+            // *** 修改：加入 scroll-margin-top 來修正捲動偏移 ***
+            <section key={categoryKey} ref={categoryRefs[categoryKey]} className="mb-8 scroll-mt-32">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4 pt-4">{translations[lang]?.categories[categoryKey] || categoryKey}</h2>
+              <div className="space-y-4">
+                {(menuData[categoryKey] || []).map(item => (
+                  <MenuItem key={item.id} item={item} lang={lang} onClick={() => setSelectedItem(item)} />
+                ))}
+              </div>
+            </section>
+          ))
+        )}
       </main>
 
       {cart.length > 0 && (
@@ -220,26 +195,76 @@ export default function App() {
       )}
 
       {selectedItem && <ItemDetailModal item={selectedItem} t={t} lang={lang} onClose={() => setSelectedItem(null)} onAddToCart={handleAddToCart} />}
-      
-      {/* *** 修改：傳入 handleSubmitOrder 和 isAiEnabled *** */}
       {isCartOpen && <CartModal cart={cart} t={t} lang={lang} menuData={menuData} totalAmount={totalAmount} isAiEnabled={isAiEnabled} onClose={() => setIsCartOpen(false)} onUpdateQuantity={updateCartItemQuantity} onRemove={removeFromCart} onSubmitOrder={handleSubmitOrder} />}
     </div>
   );
 }
 
-// --- 餐點詳情彈窗組件 (小幅修改以應對多語言)---
+// --- 子組件 ---
+const LanguageSwitcher = ({ lang, setLang, t }) => ( <div className="relative"> <select value={lang} onChange={(e) => setLang(e.target.value)} className="appearance-none bg-white bg-opacity-80 backdrop-blur-sm text-gray-800 font-semibold py-2 px-4 pr-8 rounded-full shadow-md focus:outline-none"> {Object.keys(translations).map(key => (<option key={key} value={key}>{translations[key].language}</option>))} </select> <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700"><ChevronDown size={20} /></div> </div> );
+
+const HeadcountSelector = ({ headcount, setHeadcount, t }) => (
+    <div className="flex items-center space-x-2">
+        <Users size={20} className="text-gray-600" />
+        <select value={headcount} onChange={e => setHeadcount(parseInt(e.target.value, 10))} className="appearance-none bg-white bg-opacity-80 backdrop-blur-sm text-gray-800 font-semibold py-2 pl-3 pr-8 rounded-full shadow-md focus:outline-none">
+            {Array.from({ length: 10 }, (_, i) => i + 1).map(num => (
+                <option key={num} value={num}>{num} 人</option>
+            ))}
+        </select>
+    </div>
+);
+
+const MenuItem = ({ item, lang, onClick }) => (
+  <div className="bg-white rounded-xl shadow-md overflow-hidden flex cursor-pointer hover:shadow-lg transition-shadow duration-300" onClick={onClick}>
+    <div className="flex-1 p-4">
+      <h3 className="font-bold text-lg text-gray-900">{item.name?.[lang] || item.name?.zh}</h3>
+      <p className="text-gray-600 text-sm mt-1">{item.description?.[lang] || item.description?.zh}</p>
+      <p className="font-semibold text-orange-500 mt-2">${item.price}</p>
+    </div>
+    <img src={item.image} alt={item.name?.[lang] || item.name?.zh} className="w-32 h-32 object-cover"/>
+  </div>
+);
+
+const MenuSkeleton = () => (
+  <div className="space-y-8 animate-pulse">
+    {[...Array(3)].map((_, i) => (
+      <div key={i}>
+        <div className="h-8 w-1/3 bg-gray-300 rounded-lg mb-4"></div>
+        <div className="space-y-4">
+          {[...Array(2)].map((_, j) => (
+            <div key={j} className="bg-white rounded-xl shadow-md overflow-hidden flex">
+              <div className="flex-1 p-4">
+                <div className="h-6 w-3/4 bg-gray-300 rounded"></div>
+                <div className="h-4 w-full bg-gray-200 rounded mt-2"></div>
+                <div className="h-4 w-2/3 bg-gray-200 rounded mt-1"></div>
+                <div className="h-5 w-1/4 bg-gray-300 rounded mt-2"></div>
+              </div>
+              <div className="w-32 h-32 bg-gray-300"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+// --- ItemDetailModal Component ---
 const ItemDetailModal = ({ item, t, lang, onClose, onAddToCart }) => {
   const [selectedOptions, setSelectedOptions] = useState({});
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
     const initialOptions = {};
-    item.options.forEach(optionKey => {
-      const optionValues = Object.keys(t.options[optionKey]);
-      if (optionValues.length > 1) {
-          initialOptions[optionKey] = Object.keys(t.options[optionKey]).filter(k => k !== 'name')[0];
-      }
-    });
+    if (item.options) {
+      item.options.forEach(optionKey => {
+        if (t.options[optionKey]) {
+          const optionValues = Object.keys(t.options[optionKey]).filter(k => k !== 'name');
+          if (optionValues.length > 0) {
+            initialOptions[optionKey] = optionValues[0];
+          }
+        }
+      });
+    }
     setSelectedOptions(initialOptions);
   }, [item, t]);
   
@@ -257,11 +282,11 @@ const ItemDetailModal = ({ item, t, lang, onClose, onAddToCart }) => {
           <h2 className="text-2xl font-bold mb-2">{item.name?.[lang] || item.name?.zh}</h2>
           <p className="text-gray-600 mb-4">{item.description?.[lang] || item.description?.zh}</p>
           <p className="text-2xl font-bold text-orange-500 mb-6">${item.price}</p>
-          {item.options.map(optionKey => (
+          {item.options && item.options.map(optionKey => (
             <div key={optionKey} className="mb-6">
-              <h3 className="text-lg font-semibold mb-3">{t.options[optionKey].name}</h3>
+              <h3 className="text-lg font-semibold mb-3">{t.options[optionKey]?.name}</h3>
               <div className="flex flex-wrap gap-2">
-                {Object.keys(t.options[optionKey]).filter(k => k !== 'name').map(valueKey => (
+                {t.options[optionKey] && Object.keys(t.options[optionKey]).filter(k => k !== 'name').map(valueKey => (
                   <button key={valueKey} onClick={() => handleOptionChange(optionKey, valueKey)} className={`px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 ${selectedOptions[optionKey] === valueKey ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-700'}`}>{t.options[optionKey][valueKey]}</button>
                 ))}
               </div>
@@ -278,17 +303,18 @@ const ItemDetailModal = ({ item, t, lang, onClose, onAddToCart }) => {
   );
 };
 
-// --- 購物車彈窗組件 (整合 Gemini AI 和送出訂單) ---
+
+// --- CartModal Component ---
 const CartModal = ({ cart, t, lang, menuData, totalAmount, isAiEnabled, onClose, onUpdateQuantity, onRemove, onSubmitOrder }) => {
     const [isRecommending, setIsRecommending] = useState(false);
     const [recommendation, setRecommendation] = useState('');
 
     const handleGetRecommendation = async () => {
         setIsRecommending(true); setRecommendation('');
-        const cartItemNames = cart.map(item => item.name[lang] || item.name.zh).join(', ');
-        const availableMenuItems = Object.values(menuData).flat().filter(menuItem => !cart.find(cartItem => cartItem.id === menuItem.id)).map(item => item.name[lang] || item.name.zh).join(', ');
+        const cartItemNames = cart.map(item => item.name?.[lang] || item.name.zh).join(', ');
+        const menuItems = menuData ? Object.values(menuData).flat() : [];
+        const availableMenuItems = menuItems.filter(menuItem => !cart.find(cartItem => cartItem.id === menuItem.id)).map(item => item.name?.[lang] || item.name.zh).join(', ');
         
-        // 將呼叫 Gemini 的邏輯移至後端，以確保 API 金鑰的安全性
         const recommendationRequest = {
             language: translations[lang]?.language || "English",
             cartItems: cartItemNames,
@@ -296,17 +322,13 @@ const CartModal = ({ cart, t, lang, menuData, totalAmount, isAiEnabled, onClose,
         };
 
         try {
-            // 現在呼叫我們自己的後端 API 端點來獲取推薦
             const response = await fetch(`${API_URL}/api/recommendation`, { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
                 body: JSON.stringify(recommendationRequest) 
             });
-
             if (!response.ok) { throw new Error(`API call failed with status: ${response.status}`); }
-            
             const result = await response.json();
-            
             if (result.recommendation) {
                 setRecommendation(result.recommendation);
             } else { 
@@ -336,7 +358,7 @@ const CartModal = ({ cart, t, lang, menuData, totalAmount, isAiEnabled, onClose,
                                 <img src={item.image} alt={item.name?.[lang] || item.name?.zh} className="w-20 h-20 object-cover rounded-md" />
                                 <div className="flex-1">
                                     <p className="font-bold text-gray-800">{item.name?.[lang] || item.name?.zh}</p>
-                                    <div className="text-xs text-gray-500 mt-1">{Object.entries(item.selectedOptions).map(([group, option]) => (<span key={group} className="mr-2">{t.options[group][option]}</span>))}</div>
+                                    <div className="text-xs text-gray-500 mt-1">{item.selectedOptions && Object.entries(item.selectedOptions).map(([group, option]) => (<span key={group} className="mr-2">{t.options[group]?.[option]}</span>))}</div>
                                     {item.notes && <p className="text-xs text-orange-600 mt-1 italic">"{item.notes}"</p>}
                                     <p className="font-semibold text-gray-700 mt-1">${item.price}</p>
                                 </div>
@@ -350,7 +372,6 @@ const CartModal = ({ cart, t, lang, menuData, totalAmount, isAiEnabled, onClose,
                                 </div>
                             </div>
                         ))}
-                        {/* 根據 isAiEnabled 決定是否顯示按鈕 */}
                         {isAiEnabled && (
                             <div className="pt-4">
                                 <button onClick={handleGetRecommendation} disabled={isRecommending} className="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center disabled:bg-blue-300 disabled:cursor-wait">
@@ -369,7 +390,6 @@ const CartModal = ({ cart, t, lang, menuData, totalAmount, isAiEnabled, onClose,
                 
                 <footer className="p-4 bg-white border-t">
                     <div className="flex justify-between items-center mb-4"><span className="text-lg font-semibold text-gray-800">{t.total}</span><span className="text-2xl font-bold text-orange-500">${totalAmount}</span></div>
-                    {/* 綁定 onClick 事件以送出訂單 */}
                     <button onClick={onSubmitOrder} disabled={cart.length === 0} className="w-full bg-green-500 text-white text-lg font-bold py-3 rounded-lg hover:bg-green-600 transition-colors duration-300 disabled:bg-gray-300 disabled:cursor-not-allowed">
                         {t.submitOrder}
                     </button>
