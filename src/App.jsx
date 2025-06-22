@@ -1,11 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users, ArrowLeft, ArrowRight } from 'lucide-react';
+import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users, ArrowLeft } from 'lucide-react';
 
-// --- 環境變數設定 ---
-// 這一行是 Vite 專案讀取環境變數的標準方式。
-// Vite 在建置專案時，會自動將 `import.meta.env.VITE_API_BASE_URL` 替換為您在 Vercel 上設定的實際網址。
-// 在某些非 Vite 的程式碼檢查工具中 (例如本預覽環境)，可能會看到一個關於 `import.meta` 的 "WARNING" (警告)，
-// 這是因為該工具不認識 Vite 的語法。這個警告是正常的，並不會影響您在本機開發或線上部署的實際運行。
+// Vite 專案的標準作法，用於讀取環境變數
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 // --- i18n 多國語言資料 ---
@@ -308,55 +304,18 @@ export default function App() {
 }
 
 // --- 子組件 ---
-const AnnouncementModal = ({ t, onClose }) => {
-    const announcements = [
-        {
-            image: "https://placehold.co/600x300/FFF4E6/FF8C00?text=期間限定!+夏日芒果冰",
-            text: "炎炎夏日，來一碗清涼消暑的芒果冰吧！本店採用在地愛文芒果，香甜多汁，期間限定優惠中！"
-        },
-        {
-            image: "https://placehold.co/600x300/E6F7FF/006D77?text=會員招募中!",
-            text: "即日起，加入會員即享9折優惠，消費累積點數，好禮換不完！詳情請洽櫃檯人員。"
-        },
-        {
-            image: "https://placehold.co/600x300/F0E6FF/8338EC?text=營業時間調整",
-            text: "親愛的顧客您好，為提供更完善的服務，自7月1日起，本店營業時間調整為 11:00 AM - 10:00 PM。"
-        }
-    ];
-    const [currentIndex, setCurrentIndex] = useState(0);
-
-    const prevSlide = () => setCurrentIndex(i => (i === 0 ? announcements.length - 1 : i - 1));
-    const nextSlide = () => setCurrentIndex(i => (i === announcements.length - 1 ? 0 : i + 1));
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4">
-            <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl p-6 text-center animate-slide-up relative overflow-hidden">
-                <h2 className="text-2xl font-bold text-orange-500 mb-4">{t.announcement}</h2>
-                <div className="relative h-80">
-                    {announcements.map((ann, index) => (
-                        <div key={index} className={`absolute top-0 left-0 w-full h-full transition-opacity duration-500 ease-in-out ${index === currentIndex ? 'opacity-100' : 'opacity-0'}`}>
-                            <img src={ann.image} alt={`Announcement ${index + 1}`} className="w-full h-48 object-cover rounded-lg mb-4" />
-                            <p className="text-gray-700">{ann.text}</p>
-                        </div>
-                    ))}
-                </div>
-                
-                <div className="flex justify-center items-center my-4 space-x-2">
-                    {announcements.map((_, index) => (
-                        <div key={index} className={`w-3 h-3 rounded-full transition-colors ${currentIndex === index ? 'bg-orange-500' : 'bg-gray-300'}`}></div>
-                    ))}
-                </div>
-
-                <button onClick={onClose} className="w-full bg-orange-500 text-white font-bold py-3 rounded-lg hover:bg-orange-600 transition-colors mt-2">
-                    {t.close}
-                </button>
-
-                <button onClick={prevSlide} className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/50 p-2 rounded-full hover:bg-white/80 transition-colors"><ArrowLeft /></button>
-                <button onClick={nextSlide} className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/50 p-2 rounded-full hover:bg-white/80 transition-colors"><ArrowRight /></button>
-            </div>
+const AnnouncementModal = ({ t, onClose }) => (
+    <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4">
+        <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl p-6 text-center animate-slide-up">
+            <h2 className="text-2xl font-bold text-orange-500 mb-4">{t.announcement}</h2>
+            <img src="https://placehold.co/600x300/FFF4E6/FF8C00?text=期間限定!+夏日芒果冰" alt="Announcement" className="w-full rounded-lg mb-4" />
+            <p className="text-gray-700 mb-6">炎炎夏日，來一碗清涼消暑的芒果冰吧！本店採用在地愛文芒果，香甜多汁，期間限定優惠中！</p>
+            <button onClick={onClose} className="w-full bg-orange-500 text-white font-bold py-3 rounded-lg hover:bg-orange-600 transition-colors">
+                {t.close}
+            </button>
         </div>
-    );
-};
+    </div>
+);
 
 const ConfirmModal = ({ t, onConfirm, onCancel }) => (
     <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4">
