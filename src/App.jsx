@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users, ArrowLeft } from 'lucide-react';
 
+// Vite 專案的標準作法，用於讀取環境變數
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 // --- i18n 多國語言資料 ---
@@ -275,7 +276,7 @@ export default function App() {
       <main className="p-4 max-w-2xl mx-auto">
         {!filteredMenu ? ( <MenuSkeleton /> ) : (
           Object.keys(filteredMenu).length > 0 ? Object.keys(filteredMenu).map(categoryKey => (
-            <section key={categoryKey} className="mb-8">
+            <section key={categoryKey} className="mb-8 scroll-mt-32">
               <h2 className="text-2xl font-bold text-gray-800 mb-4 pt-4">{t.categories[categoryKey] || categoryKey}</h2>
               <div className="space-y-4">
                 {(filteredMenu[categoryKey] || []).map(item => (
@@ -409,7 +410,7 @@ const ItemDetailModal = ({ item, t, lang, onClose, onAddToCart }) => {
   const handleSubmit = () => { onAddToCart(item, selectedOptions, notes, quantity); };
   
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-end sm:items-center">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-end sm:items-center p-4">
       <div className="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl shadow-xl animate-slide-up">
         <div className="relative">
           <img src={item.image} alt={item.name?.[lang] || item.name?.zh} className="w-full h-48 object-cover rounded-t-2xl sm:rounded-t-lg" />
@@ -460,7 +461,37 @@ const CartModal = ({ cart, t, lang, menuData, totalAmount, isAiEnabled, onClose,
     const [isRecommending, setIsRecommending] = useState(false);
     const [recommendation, setRecommendation] = useState('');
 
-    const handleGetRecommendation = async () => { /* ... */ };
+    const handleGetRecommendation = async () => {
+        setIsRecommending(true); setRecommendation('');
+        const cartItemNames = cart.map(item => item.name?.[lang] || item.name.zh).join(', ');
+        const menuItems = menuData ? Object.values(menuData).flat() : [];
+        const availableMenuItems = menuItems.filter(menuItem => !cart.find(cartItem => cartItem.id === menuItem.id)).map(item => item.name?.[lang] || item.name.zh).join(', ');
+        
+        const recommendationRequest = {
+            language: translations[lang]?.language || "English",
+            cartItems: cartItemNames,
+            availableItems: availableMenuItems,
+        };
+
+        try {
+            const response = await fetch(`${API_URL}/api/recommendation`, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(recommendationRequest) 
+            });
+            if (!response.ok) { throw new Error(`API call failed with status: ${response.status}`); }
+            const result = await response.json();
+            if (result.recommendation) {
+                setRecommendation(result.recommendation);
+            } else { 
+                throw new Error("AI response was empty or malformed."); 
+            }
+        } catch (error) {
+            setRecommendation(t.orderFail); console.error('Error fetching recommendation:', error);
+        } finally {
+            setIsRecommending(false);
+        }
+    };
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end" onClick={onClose}>
@@ -495,7 +526,19 @@ const CartModal = ({ cart, t, lang, menuData, totalAmount, isAiEnabled, onClose,
                             </div>
                         </div>
                     ))}
-                    {isAiEnabled && ( /* ... */ )}
+                    {isAiEnabled && (
+                         <div className="pt-4">
+                            <button onClick={handleGetRecommendation} disabled={isRecommending} className="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center disabled:bg-blue-300 disabled:cursor-wait">
+                                {t.getRecommendation}
+                            </button>
+                        </div>
+                    )}
+                    {(isRecommending || recommendation) && (
+                         <div className="mt-4 p-3 bg-orange-50 rounded-lg border border-orange-200">
+                            <div className="flex items-center mb-2"><Sparkles className="text-orange-500 mr-2" size={20} /><h4 className="font-semibold text-orange-700">{t.aiRecommendation}</h4></div>
+                            {isRecommending ? (<p className="text-sm text-gray-600 animate-pulse">{t.aiThinking}</p>) : (<p className="text-sm text-gray-700 whitespace-pre-wrap">{recommendation}</p>)}
+                        </div>
+                    )}
                 </main>
                 <footer className="p-4 bg-white border-t">
                     <div className="flex justify-between items-center mb-4"><span className="text-lg font-semibold text-gray-800">{t.total}</span><span className="text-2xl font-bold text-orange-500">${totalAmount}</span></div>
