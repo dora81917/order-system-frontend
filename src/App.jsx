@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users, ArrowLeft, WifiOff, RefreshCw, ArrowRight } from 'lucide-react';
+import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users, ArrowLeft, ArrowRight, WifiOff, RefreshCw } from 'lucide-react';
 
 // --- 環境變數設定 ---
 // 這一行是 Vite 專案讀取環境變數的標準方式。
