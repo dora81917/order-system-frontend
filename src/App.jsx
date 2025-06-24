@@ -2,19 +2,17 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users, ArrowLeft, ArrowRight, WifiOff, RefreshCw } from 'lucide-react';
 
 // --- 環境變數設定 ---
-// 重要：為了修復預覽環境中的警告訊息，此處暫時將 API 網址寫死為本地開發網址。
-// 當您未來要將此專案部署到 Vercel 時，【必須】將此行還原為 Vite 的標準寫法：
-// const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
-const API_URL = 'http://localhost:8080';
-
+// 為了相容不同的建置環境，我們動態檢查 import.meta.env 是否存在。
+// 這能確保程式碼在本地開發和 Vercel 線上部署時都能正常運作，並解決您遇到的編譯警告。
+const API_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || 'http://localhost:8080';
 
 // --- i18n 多國語言資料 (已整合公告內容並補全所有語言) ---
 const translations = {
   zh: {
     language: "繁體中文",
     menu: "菜單",
-    categories: { all: "全部", limited: "期間限定", main: "主餐", side: "附餐", drink: "飲品", dessert: "甜點" },
-    announcement: "餐廳公告",
+    categories: { all: "全部", limited: "主廚推薦", main: "經典主食", side: "美味附餐", drink: "清涼飲品", dessert: "飯後甜點" },
+    announcement: "最新消息",
     announcements: [
         { image: "https://images.pexels.com/photos/5938363/pexels-photo-5938363.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "炎炎夏日，來一碗清涼消暑的芒果冰吧！本店採用在地愛文芒果，香甜多汁，期間限定優惠中！" },
         { image: "https://images.pexels.com/photos/1893557/pexels-photo-1893557.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "即日起，加入會員即享9折優惠，消費累積點數，好禮換不完！詳情請洽櫃檯人員。" },
@@ -30,7 +28,7 @@ const translations = {
     notesPlaceholder: "有什麼特別需求嗎？",
     table: "桌號",
     headcount: "用餐人數",
-    quantity: "數量",
+    quantity: "数量",
     continueOrdering: "繼續點餐",
     submitOrder: "送出訂單",
     confirmOrderTitle: "確認送出訂單？",
@@ -56,8 +54,8 @@ const translations = {
   en: {
     language: "English",
     menu: "Menu",
-    categories: { all: "All", limited: "Limited Time", main: "Main Course", side: "Side Dish", drink: "Drinks", dessert: "Desserts" },
-    announcement: "Announcement",
+    categories: { all: "All", limited: "Chef's Special", main: "Main Course", side: "Side Dish", drink: "Drinks", dessert: "Desserts" },
+    announcement: "Latest News",
     announcements: [
         { image: "https://images.pexels.com/photos/5938363/pexels-photo-5938363.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "Enjoy a bowl of refreshing mango shaved ice in the hot summer! Made with fresh local Irwin mangoes." },
         { image: "https://images.pexels.com/photos/1893557/pexels-photo-1893557.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "Join our membership program today to get a 10% discount and earn points for every purchase!" },
@@ -223,7 +221,7 @@ export default function App() {
     if (fetchStatus === 'success' && filteredMenu) {
       return (
         <React.Fragment>
-            <nav className="sticky top-[92px] z-10 bg-white/90 backdrop-blur-md shadow-sm overflow-x-auto">
+            <nav className="sticky top-[76px] z-10 bg-white/90 backdrop-blur-md shadow-sm overflow-x-auto">
                 <div className="flex justify-center items-center space-x-2 sm:space-x-6 px-4">
                 {menuData && Object.keys(t.categories).map(key => (
                     <button key={key} onClick={() => setActiveCategory(key)} className={`py-3 px-2 sm:px-4 text-sm sm:text-base font-semibold whitespace-nowrap transition-colors duration-200 ${activeCategory === key ? 'text-orange-600 border-b-2 border-orange-600' : 'text-gray-600 border-b-2 border-transparent hover:text-orange-500'}`}>{t.categories[key] || key}</button>
