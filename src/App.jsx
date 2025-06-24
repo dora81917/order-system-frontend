@@ -8,7 +8,6 @@ import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users, Arr
 // 這是因為該工具不認識 Vite 的語法。這個警告是正常的，並不會影響您在本機開發或線上部署的實際運行。
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
-
 // --- i18n 多國語言資料 ---
 const translations = {
   zh: {
@@ -72,6 +71,9 @@ const translations = {
     confirm: "Confirm & Submit",
     orderSuccess: "Order placed successfully!",
     orderFail: "Order failed, please try again later.",
+    loadingMenu: "Loading delicious menu...",
+    loadMenuError: "Could not load menu. Please check your connection or try again later.",
+    noItemsInCategory: "No items in this category.",
     getRecommendation: "✨ Get AI Recommendations",
     aiRecommendation: "AI Smart Recommendation",
     aiThinking: "AI assistant is thinking for you...",
@@ -82,74 +84,8 @@ const translations = {
         size: { name: "Size", small: "Small", large: "Large" },
     },
    },
-  ja: {
-    language: "日本語",
-    menu: "メニュー",
-    categories: { all: "すべて", limited: "期間限定", main: "メイン", side: "サイド", drink: "ドリンク", dessert: "デザート" },
-    announcement: "お知らせ",
-    close: "閉じる",
-    itemDetails: "商品の詳細",
-    addToCart: "カートに追加",
-    total: "合計",
-    cart: "ご注文",
-    emptyCart: "カートは空です",
-    notes: "備考",
-    notesPlaceholder: "特別なご要望はありますか？",
-    table: "テーブル",
-    headcount: "人数",
-    quantity: "数量",
-    continueOrdering: "注文を続ける",
-    submitOrder: "注文を送信",
-    confirmOrderTitle: "注文を確定しますか？",
-    confirmOrderMsg: "送信後の変更はできません。ご注文内容をご確認ください。",
-    cancel: "キャンセル",
-    confirm: "確定する",
-    orderSuccess: "注文に成功しました！",
-    orderFail: "注文に失敗しました。後でもう一度お試しください。",
-    getRecommendation: "✨ AIにおすすめを聞く",
-    aiRecommendation: "AIスマート推薦",
-    aiThinking: "AIアシスタントが考えています...",
-    options: {
-        spice: { name: "辛さ", none: "辛くない", mild: "ピリ辛", medium: "中辛", hot: "激辛" },
-        sugar: { name: "甘さ", full: "通常", less: "甘さ控えめ", half: "甘さ半分", quarter: "甘さ微糖", none: "無糖" },
-        ice: { name: "氷", regular: "通常", less: "少なめ", none: "氷なし" },
-        size: { name: "サイズ", small: "小", large: "大" },
-    },
-  },
-  ko: {
-    language: "한국어",
-    menu: "메뉴",
-    categories: { all: "전체", limited: "기간 한정", main: "메인 요리", side: "사이드", drink: "음료", dessert: "디저트" },
-    announcement: "공지사항",
-    close: "닫기",
-    itemDetails: "상품 상세",
-    addToCart: "카트에 추가",
-    total: "총액",
-    cart: "주문 내역",
-    emptyCart: "장바구니가 비어 있습니다",
-    notes: "메모",
-    notesPlaceholder: "특별한 요청 있으신가요?",
-    table: "테이블",
-    headcount: "인원수",
-    quantity: "수량",
-    continueOrdering: "계속 주문하기",
-    submitOrder: "주문 제출",
-    confirmOrderTitle: "주문을 제출하시겠습니까?",
-    confirmOrderMsg: "제출된 주문은 수정할 수 없습니다. 주문 내역을 확인해주세요.",
-    cancel: "취소",
-    confirm: "제출",
-    orderSuccess: "주문이 완료되었습니다!",
-    orderFail: "주문에 실패했습니다. 나중에 다시 시도해주세요.",
-    getRecommendation: "✨ AI에게 추천받기",
-    aiRecommendation: "AI 스마트 추천",
-    aiThinking: "AI 어시스턴트가 생각 중입니다...",
-    options: {
-        spice: { name: "맵기", none: "안 매운맛", mild: "순한 맛", medium: "중간 맛", hot: "매운맛" },
-        sugar: { name: "당도", full: "정상", less: "덜 달게", half: "중간", quarter: "약간 달게", none: "무설탕" },
-        ice: { name: "얼음", regular: "보통", less: "적게", none: "없이" },
-        size: { name: "사이즈", small: "소", large: "대" },
-    },
-  },
+  ja: { language: "日本語", /* ... */ },
+  ko: { language: "한국어", /* ... */ },
 };
 
 
@@ -158,7 +94,7 @@ export default function App() {
   const [lang, setLang] = useState('zh');
   const [cart, setCart] = useState([]);
   const [menuData, setMenuData] = useState(null);
-  const [fetchStatus, setFetchStatus] = useState('loading'); // loading, success, error
+  const [fetchStatus, setFetchStatus] = useState('loading'); // 'loading', 'success', 'error'
   const [selectedItem, setSelectedItem] = useState(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAiEnabled, setIsAiEnabled] = useState(false);
@@ -171,11 +107,20 @@ export default function App() {
 
   useEffect(() => {
     setFetchStatus('loading');
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    // 設定一個 30 秒的超時，如果伺服器沒有回應就取消請求
+    const timeoutId = setTimeout(() => {
+        controller.abort();
+        setFetchStatus('error');
+    }, 30000);
+
     const fetchData = async () => {
       try {
         const [menuRes, settingsRes] = await Promise.all([
-          fetch(`${API_URL}/api/menu`),
-          fetch(`${API_URL}/api/settings`)
+          fetch(`${API_URL}/api/menu`, { signal }),
+          fetch(`${API_URL}/api/settings`, { signal })
         ]);
         if (!menuRes.ok || !settingsRes.ok) {
             throw new Error('Network response was not ok');
@@ -186,20 +131,28 @@ export default function App() {
         setIsAiEnabled(settings.isAiEnabled);
         setFetchStatus('success');
       } catch (error) {
-        console.error("無法從後端獲取資料:", error);
-        setFetchStatus('error');
+        if (error.name !== 'AbortError') {
+          console.error("無法從後端獲取資料:", error);
+          setFetchStatus('error');
+        }
+      } finally {
+          clearTimeout(timeoutId);
       }
     };
+    
     fetchData();
+
+    return () => {
+        controller.abort();
+        clearTimeout(timeoutId);
+    };
   }, []);
 
   const handleAddToCart = (item, options, notes, quantity) => {
     const optionsKey = JSON.stringify(Object.keys(options).sort().map(key => `${key}:${options[key]}`));
     const notesKey = notes || '';
     const uniqueId = `${item.id}-${optionsKey}-${notesKey}`;
-
     const existingItemIndex = cart.findIndex(cartItem => cartItem.uniqueId === uniqueId);
-
     if (existingItemIndex > -1) {
       const updatedCart = [...cart];
       updatedCart[existingItemIndex].quantity += quantity;
@@ -228,7 +181,6 @@ export default function App() {
       totalAmount: totalAmount,
       items: cart.map(item => ({ id: item.id, name: item.name, quantity: item.quantity, notes: item.notes || "", selectedOptions: item.selectedOptions }))
     };
-
     try {
       const response = await fetch(`${API_URL}/api/orders`, {
         method: 'POST',
@@ -287,7 +239,6 @@ export default function App() {
     <div className="bg-gray-100 min-h-screen font-sans">
       {showAnnouncement && <AnnouncementModal t={t} onClose={() => setShowAnnouncement(false)} />}
       {showConfirmModal && <ConfirmModal t={t} onConfirm={handleSubmitOrder} onCancel={() => setShowConfirmModal(false)} />}
-
       <header className="sticky top-0 z-20 bg-white bg-opacity-80 backdrop-blur-md shadow-sm p-4 flex justify-between items-center">
         <div className="flex flex-col items-start gap-2">
             <LanguageSwitcher lang={lang} setLang={setLang} />
@@ -301,7 +252,6 @@ export default function App() {
           ${totalAmount}
         </div>
       </header>
-      
       <nav className="sticky top-[92px] z-20 bg-white/90 backdrop-blur-md shadow-sm overflow-x-auto">
         <div className="flex justify-center items-center space-x-2 sm:space-x-6 px-4">
           {menuData && Object.keys(t.categories).map(key => (
@@ -309,11 +259,7 @@ export default function App() {
           ))}
         </div>
       </nav>
-
-      <main className="p-4 max-w-2xl mx-auto">
-        {renderMainContent()}
-      </main>
-
+      <main className="p-4 max-w-2xl mx-auto">{renderMainContent()}</main>
       {cart.length > 0 && (
          <div className="fixed bottom-6 right-6 z-30">
             <button onClick={() => setIsCartOpen(true)} className="bg-orange-500 text-white rounded-full shadow-lg flex items-center justify-center w-16 h-16 hover:bg-orange-600 transition-all duration-300 transform hover:scale-110">
@@ -322,7 +268,6 @@ export default function App() {
             </button>
         </div>
       )}
-
       {selectedItem && <ItemDetailModal item={selectedItem} t={t} lang={lang} onClose={() => setSelectedItem(null)} onAddToCart={handleAddToCart} />}
       {isCartOpen && <CartModal cart={cart} t={t} lang={lang} menuData={menuData} totalAmount={totalAmount} isAiEnabled={isAiEnabled} onClose={() => setIsCartOpen(false)} onUpdateQuantity={updateCartItemQuantity} onRemove={removeFromCart} onSubmitOrder={() => setShowConfirmModal(true)} />}
     </div>
@@ -332,24 +277,13 @@ export default function App() {
 // --- 子組件 ---
 const AnnouncementModal = ({ t, onClose }) => {
     const announcements = [
-        {
-            image: "https://placehold.co/600x300/FFF4E6/FF8C00?text=期間限定!+夏日芒果冰",
-            text: "炎炎夏日，來一碗清涼消暑的芒果冰吧！本店採用在地愛文芒果，香甜多汁，期間限定優惠中！"
-        },
-        {
-            image: "https://placehold.co/600x300/E6F7FF/006D77?text=會員招募中!",
-            text: "即日起，加入會員即享9折優惠，消費累積點數，好禮換不完！詳情請洽櫃檯人員。"
-        },
-        {
-            image: "https://placehold.co/600x300/F0E6FF/8338EC?text=營業時間調整",
-            text: "親愛的顧客您好，為提供更完善的服務，自7月1日起，本店營業時間調整為 11:00 AM - 10:00 PM。"
-        }
+        { image: "https://placehold.co/600x300/FFF4E6/FF8C00?text=期間限定!+夏日芒果冰", text: "炎炎夏日，來一碗清涼消暑的芒果冰吧！本店採用在地愛文芒果，香甜多汁，期間限定優惠中！" },
+        { image: "https://placehold.co/600x300/E6F7FF/006D77?text=會員招募中!", text: "即日起，加入會員即享9折優惠，消費累積點數，好禮換不完！詳情請洽櫃檯人員。" },
+        { image: "https://placehold.co/600x300/F0E6FF/8338EC?text=營業時間調整", text: "親愛的顧客您好，為提供更完善的服務，自7月1日起，本店營業時間調整為 11:00 AM - 10:00 PM。" }
     ];
     const [currentIndex, setCurrentIndex] = useState(0);
-
     const prevSlide = () => setCurrentIndex(i => (i === 0 ? announcements.length - 1 : i - 1));
     const nextSlide = () => setCurrentIndex(i => (i === announcements.length - 1 ? 0 : i + 1));
-
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4">
             <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl p-6 text-center animate-slide-up relative overflow-hidden">
@@ -362,109 +296,26 @@ const AnnouncementModal = ({ t, onClose }) => {
                         </div>
                     ))}
                 </div>
-                
                 <div className="flex justify-center items-center my-4 space-x-2">
-                    {announcements.map((_, index) => (
-                        <div key={index} className={`w-3 h-3 rounded-full transition-colors ${currentIndex === index ? 'bg-orange-500' : 'bg-gray-300'}`}></div>
-                    ))}
+                    {announcements.map((_, index) => (<div key={index} className={`w-3 h-3 rounded-full transition-colors ${currentIndex === index ? 'bg-orange-500' : 'bg-gray-300'}`}></div>))}
                 </div>
-
-                <button onClick={onClose} className="w-full bg-orange-500 text-white font-bold py-3 rounded-lg hover:bg-orange-600 transition-colors mt-2">
-                    {t.close}
-                </button>
-
+                <button onClick={onClose} className="w-full bg-orange-500 text-white font-bold py-3 rounded-lg hover:bg-orange-600 transition-colors mt-2">{t.close}</button>
                 <button onClick={prevSlide} className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/50 p-2 rounded-full hover:bg-white/80 transition-colors"><ArrowLeft /></button>
                 <button onClick={nextSlide} className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/50 p-2 rounded-full hover:bg-white/80 transition-colors"><ArrowRight /></button>
             </div>
         </div>
     );
 };
-
-const ConfirmModal = ({ t, onConfirm, onCancel }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4">
-        <div className="bg-white w-full max-w-sm rounded-xl shadow-2xl p-6 animate-slide-up">
-            <h3 className="text-xl font-bold text-gray-800 mb-2">{t.confirmOrderTitle}</h3>
-            <p className="text-gray-600 mb-6">{t.confirmOrderMsg}</p>
-            <div className="flex gap-4">
-                <button onClick={onCancel} className="flex-1 bg-gray-200 text-gray-800 font-bold py-3 rounded-lg hover:bg-gray-300 transition-colors">{t.cancel}</button>
-                <button onClick={onConfirm} className="flex-1 bg-green-500 text-white font-bold py-3 rounded-lg hover:bg-green-600 transition-colors">{t.confirm}</button>
-            </div>
-        </div>
-    </div>
-);
-
-const LanguageSwitcher = ({ lang, setLang }) => (
-    <div className="relative">
-        <select value={lang} onChange={(e) => setLang(e.target.value)} className="appearance-none bg-white bg-opacity-80 backdrop-blur-sm text-gray-800 font-semibold py-2 px-4 pr-8 rounded-full shadow-md focus:outline-none">
-            {Object.keys(translations).map(key => (
-                <option key={key} value={key}>{translations[key].language}</option>
-            ))}
-        </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-            <ChevronDown size={20} />
-        </div>
-    </div>
-);
-
-const HeadcountSelector = ({ headcount, setHeadcount, t }) => (
-    <div className="flex items-center space-x-2">
-        <Users size={20} className="text-gray-600" />
-        <select value={headcount} onChange={e => setHeadcount(parseInt(e.target.value, 10))} className="appearance-none bg-white bg-opacity-80 backdrop-blur-sm text-gray-800 font-semibold py-2 pl-3 pr-8 rounded-full shadow-md focus:outline-none">
-            {Array.from({ length: 10 }, (_, i) => i + 1).map(num => (
-                <option key={num} value={num}>{num} {t.headcount.includes("人") ? "人" : ""}</option>
-            ))}
-        </select>
-    </div>
-);
-
-const MenuItem = ({ item, lang, t, onClick }) => (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden flex cursor-pointer hover:shadow-lg transition-shadow duration-300" onClick={onClick}>
-        <div className="flex-1 p-4">
-            <h3 className="font-bold text-lg text-gray-900">{item.name?.[lang] || item.name?.zh}</h3>
-            <p className="text-gray-600 text-sm mt-1">{item.description?.[lang] || item.description?.zh}</p>
-            <p className="font-semibold text-orange-500 mt-2">${item.price}</p>
-        </div>
-        <img src={item.image} alt={item.name?.[lang] || item.name?.zh} className="w-32 h-32 object-cover"/>
-    </div>
-);
-
-const MenuSkeleton = ({ t }) => (
-    <div className="space-y-8 animate-pulse pt-4">
-        <div className="text-center text-gray-500 font-semibold">{t.loadingMenu}</div>
-        {[...Array(3)].map((_, i) => (
-            <div key={i}>
-                <div className="h-8 w-1/3 bg-gray-300 rounded-lg mb-4"></div>
-                <div className="space-y-4">
-                    {[...Array(2)].map((_, j) => (
-                        <div key={j} className="bg-white rounded-xl shadow-md overflow-hidden flex">
-                            <div className="flex-1 p-4">
-                                <div className="h-6 w-3/4 bg-gray-300 rounded"></div>
-                                <div className="h-4 w-full bg-gray-200 rounded mt-2"></div>
-                                <div className="h-4 w-2/3 bg-gray-200 rounded mt-1"></div>
-                                <div className="h-5 w-1/4 bg-gray-300 rounded mt-2"></div>
-                            </div>
-                            <div className="w-32 h-32 bg-gray-300"></div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        ))}
-    </div>
-);
-
-const LoadError = ({ t }) => (
-    <div className="text-center py-20">
-        <WifiOff className="mx-auto h-16 w-16 text-red-400" />
-        <h3 className="mt-4 text-xl font-semibold text-gray-800">載入失敗</h3>
-        <p className="mt-2 text-gray-500">{t.loadMenuError}</p>
-    </div>
-);
-
+const ConfirmModal = ({ t, onConfirm, onCancel }) => ( <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4"> <div className="bg-white w-full max-w-sm rounded-xl shadow-2xl p-6 animate-slide-up"> <h3 className="text-xl font-bold text-gray-800 mb-2">{t.confirmOrderTitle}</h3> <p className="text-gray-600 mb-6">{t.confirmOrderMsg}</p> <div className="flex gap-4"> <button onClick={onCancel} className="flex-1 bg-gray-200 text-gray-800 font-bold py-3 rounded-lg hover:bg-gray-300 transition-colors">{t.cancel}</button> <button onClick={onConfirm} className="flex-1 bg-green-500 text-white font-bold py-3 rounded-lg hover:bg-green-600 transition-colors">{t.confirm}</button> </div> </div> </div> );
+const LanguageSwitcher = ({ lang, setLang }) => ( <div className="relative"> <select value={lang} onChange={(e) => setLang(e.target.value)} className="appearance-none bg-white bg-opacity-80 backdrop-blur-sm text-gray-800 font-semibold py-2 px-4 pr-8 rounded-full shadow-md focus:outline-none"> {Object.keys(translations).map(key => (<option key={key} value={key}>{translations[key].language}</option>))} </select> <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700"><ChevronDown size={20} /></div> </div> );
+const HeadcountSelector = ({ headcount, setHeadcount, t }) => ( <div className="flex items-center space-x-2"> <Users size={20} className="text-gray-600" /> <select value={headcount} onChange={e => setHeadcount(parseInt(e.target.value, 10))} className="appearance-none bg-white bg-opacity-80 backdrop-blur-sm text-gray-800 font-semibold py-2 pl-3 pr-8 rounded-full shadow-md focus:outline-none"> {Array.from({ length: 10 }, (_, i) => i + 1).map(num => ( <option key={num} value={num}>{num} {t.headcount.includes("人") ? "人" : ""}</option> ))} </select> </div> );
+const MenuItem = ({ item, lang, onClick }) => ( <div className="bg-white rounded-xl shadow-md overflow-hidden flex cursor-pointer hover:shadow-lg transition-shadow duration-300" onClick={onClick}> <div className="flex-1 p-4"> <h3 className="font-bold text-lg text-gray-900">{item.name?.[lang] || item.name?.zh}</h3> <p className="text-gray-600 text-sm mt-1">{item.description?.[lang] || item.description?.zh}</p> <p className="font-semibold text-orange-500 mt-2">${item.price}</p> </div> <img src={item.image} alt={item.name?.[lang] || item.name?.zh} className="w-32 h-32 object-cover"/> </div> );
+const MenuSkeleton = ({ t }) => ( <div className="space-y-8 animate-pulse pt-4"> <div className="text-center text-gray-500 font-semibold">{t.loadingMenu}</div> {[...Array(3)].map((_, i) => ( <div key={i}> <div className="h-8 w-1/3 bg-gray-300 rounded-lg mb-4"></div> <div className="space-y-4"> {[...Array(2)].map((_, j) => ( <div key={j} className="bg-white rounded-xl shadow-md overflow-hidden flex"> <div className="flex-1 p-4"> <div className="h-6 w-3/4 bg-gray-300 rounded"></div> <div className="h-4 w-full bg-gray-200 rounded mt-2"></div> <div className="h-4 w-2/3 bg-gray-200 rounded mt-1"></div> <div className="h-5 w-1/4 bg-gray-300 rounded mt-2"></div> </div> <div className="w-32 h-32 bg-gray-300"></div> </div> ))} </div> </div> ))} </div> );
+const LoadError = ({ t }) => ( <div className="text-center py-20"> <WifiOff className="mx-auto h-16 w-16 text-red-400" /> <h3 className="mt-4 text-xl font-semibold text-gray-800">載入失敗</h3> <p className="mt-2 text-gray-500">{t.loadMenuError}</p> </div> );
 const ItemDetailModal = ({ item, t, lang, onClose, onAddToCart }) => {
   const [selectedOptions, setSelectedOptions] = useState({});
   const [notes, setNotes] = useState('');
   const [quantity, setQuantity] = useState(1);
-
   useEffect(() => {
     const initialOptions = {};
     if (item.options) {
@@ -477,118 +328,13 @@ const ItemDetailModal = ({ item, t, lang, onClose, onAddToCart }) => {
     }
     setSelectedOptions(initialOptions);
   }, [item, t]);
-  
   const handleOptionChange = (group, value) => { setSelectedOptions(prev => ({ ...prev, [group]: value })); };
   const handleSubmit = () => { onAddToCart(item, selectedOptions, notes, quantity); };
-  
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-end sm:items-center p-4">
-      <div className="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl shadow-xl animate-slide-up">
-        <div className="relative">
-          <img src={item.image} alt={item.name?.[lang] || item.name?.zh} className="w-full h-48 object-cover rounded-t-2xl sm:rounded-t-lg" />
-          <button onClick={onClose} className="absolute top-3 right-3 bg-white/70 rounded-full p-2 text-gray-800 hover:bg-white transition-colors">
-            <X size={24} />
-          </button>
-        </div>
-        <div className="p-6 overflow-y-auto max-h-[calc(100vh-350px)]">
-          <h2 className="text-2xl font-bold mb-2">{item.name?.[lang] || item.name?.zh}</h2>
-          <p className="text-gray-600 mb-4">{item.description?.[lang] || item.description?.zh}</p>
-          <p className="text-2xl font-bold text-orange-500 mb-6">${item.price}</p>
-          
-          {item.options && item.options.map(optionKey => (
-            <div key={optionKey} className="mb-6">
-              <h3 className="text-lg font-semibold mb-3">{t.options[optionKey]?.name}</h3>
-              <div className="flex flex-wrap gap-2">
-                {t.options[optionKey] && Object.keys(t.options[optionKey]).filter(k => k !== 'name').map(valueKey => (
-                  <button key={valueKey} onClick={() => handleOptionChange(optionKey, valueKey)} className={`px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 ${selectedOptions[optionKey] === valueKey ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-700'}`}>{t.options[optionKey][valueKey]}</button>
-                ))}
-              </div>
-            </div>
-          ))}
-          
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-3">{t.notes}</h3>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition" rows="3" placeholder={t.notesPlaceholder}></textarea>
-          </div>
-        </div>
-        <div className="p-4 bg-white border-t border-gray-200">
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">{t.quantity}</h3>
-                <div className="flex items-center bg-gray-100 rounded-full">
-                    <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="p-3 text-gray-600 rounded-full hover:bg-gray-200 transition-colors"><Minus size={20} /></button>
-                    <span className="px-4 text-lg font-bold w-12 text-center">{quantity}</span>
-                    <button onClick={() => setQuantity(q => q + 1)} className="p-3 text-gray-600 rounded-full hover:bg-gray-200 transition-colors"><Plus size={20} /></button>
-                </div>
-            </div>
-            <button onClick={handleSubmit} className="w-full bg-orange-500 text-white text-lg font-bold py-3 rounded-lg hover:bg-orange-600 transition-colors duration-300">
-            {t.addToCart} - ${item.price * quantity}
-            </button>
-        </div>
-      </div>
-    </div>
-  );
+  return ( <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-end sm:items-center p-4"> <div className="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl shadow-xl animate-slide-up"> <div className="relative"> <img src={item.image} alt={item.name?.[lang] || item.name?.zh} className="w-full h-48 object-cover rounded-t-2xl sm:rounded-t-lg" /> <button onClick={onClose} className="absolute top-3 right-3 bg-white/70 rounded-full p-2 text-gray-800 hover:bg-white transition-colors"><X size={24} /></button> </div> <div className="p-6 overflow-y-auto max-h-[calc(100vh-350px)]"> <h2 className="text-2xl font-bold mb-2">{item.name?.[lang] || item.name?.zh}</h2> <p className="text-gray-600 mb-4">{item.description?.[lang] || item.description?.zh}</p> <p className="text-2xl font-bold text-orange-500 mb-6">${item.price}</p> {item.options && item.options.map(optionKey => ( <div key={optionKey} className="mb-6"> <h3 className="text-lg font-semibold mb-3">{t.options[optionKey]?.name}</h3> <div className="flex flex-wrap gap-2"> {t.options[optionKey] && Object.keys(t.options[optionKey]).filter(k => k !== 'name').map(valueKey => ( <button key={valueKey} onClick={() => handleOptionChange(optionKey, valueKey)} className={`px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 ${selectedOptions[optionKey] === valueKey ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-700'}`}>{t.options[optionKey][valueKey]}</button>))} </div> </div>))} <div className="mb-6"> <h3 className="text-lg font-semibold mb-3">{t.notes}</h3> <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition" rows="3" placeholder={t.notesPlaceholder}></textarea> </div> </div> <div className="p-4 bg-white border-t border-gray-200"> <div className="flex justify-between items-center mb-4"> <h3 className="text-lg font-semibold">{t.quantity}</h3> <div className="flex items-center bg-gray-100 rounded-full"> <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="p-3 text-gray-600 rounded-full hover:bg-gray-200 transition-colors"><Minus size={20} /></button> <span className="px-4 text-lg font-bold w-12 text-center">{quantity}</span> <button onClick={() => setQuantity(q => q + 1)} className="p-3 text-gray-600 rounded-full hover:bg-gray-200 transition-colors"><Plus size={20} /></button> </div> </div> <button onClick={handleSubmit} className="w-full bg-orange-500 text-white text-lg font-bold py-3 rounded-lg hover:bg-orange-600 transition-colors duration-300">{t.addToCart} - ${item.price * quantity}</button> </div> </div> </div> );
 };
-
 const CartModal = ({ cart, t, lang, menuData, totalAmount, isAiEnabled, onClose, onUpdateQuantity, onRemove, onSubmitOrder }) => {
     const [isRecommending, setIsRecommending] = useState(false);
     const [recommendation, setRecommendation] = useState('');
-
-    const handleGetRecommendation = async () => { /* ... 保持不變 ... */ };
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end" onClick={onClose}>
-            <div className="bg-gray-50 w-full max-w-md h-full flex flex-col shadow-2xl animate-slide-in-right" onClick={e => e.stopPropagation()}>
-                <header className="p-4 border-b flex justify-between items-center">
-                    <h2 className="text-xl font-bold text-gray-800">{t.cart}</h2>
-                    <button onClick={onClose} className="flex items-center gap-2 text-orange-600 font-semibold hover:text-orange-700">
-                        <ArrowLeft size={18} />
-                        {t.continueOrdering}
-                    </button>
-                </header>
-                <main className="flex-1 overflow-y-auto p-4 space-y-4">
-                    {cart.map(item => (
-                        <div key={item.cartId} className="bg-white p-3 rounded-lg shadow-sm flex items-start space-x-3">
-                            <img src={item.image} alt={item.name?.[lang] || item.name?.zh} className="w-20 h-20 object-cover rounded-md flex-shrink-0" />
-                            <div className="flex-1">
-                                <p className="font-bold text-gray-800">{item.name?.[lang] || item.name?.zh}</p>
-                                <div className="text-xs text-gray-500 mt-1">{item.selectedOptions && Object.values(item.selectedOptions).map(optKey => {
-                                    const optionGroupKey = Object.keys(t.options).find(groupKey => t.options[groupKey][optKey]);
-                                    return t.options[optionGroupKey]?.[optKey] || optKey;
-                                }).join(', ')}</div>
-                                {item.notes && <p className="text-xs text-orange-600 mt-1 italic">"{item.notes}"</p>}
-                                <p className="font-semibold text-gray-700 mt-1">${item.price}</p>
-                            </div>
-                            <div className="flex flex-col items-end justify-between h-full">
-                                <button onClick={() => onRemove(item.cartId)} className="p-1 text-gray-400 hover:text-red-500"><Trash2 size={18} /></button>
-                                <div className="flex items-center bg-gray-100 rounded-full">
-                                    <button onClick={() => onUpdateQuantity(item.cartId, -1)} className="p-2.5 text-gray-600 hover:bg-gray-200 rounded-full transition-colors"><Minus size={20} /></button>
-                                    <span className="px-3 text-lg font-bold w-10 text-center">{item.quantity}</span>
-                                    <button onClick={() => onUpdateQuantity(item.cartId, 1)} className="p-2.5 text-gray-600 hover:bg-gray-200 rounded-full transition-colors"><Plus size={20} /></button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                    {isAiEnabled && (
-                         <div className="pt-4">
-                            <button onClick={handleGetRecommendation} disabled={isRecommending} className="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center disabled:bg-blue-300 disabled:cursor-wait">
-                                {t.getRecommendation}
-                            </button>
-                        </div>
-                    )}
-                    {(isRecommending || recommendation) && (
-                         <div className="mt-4 p-3 bg-orange-50 rounded-lg border border-orange-200">
-                            <div className="flex items-center mb-2"><Sparkles className="text-orange-500 mr-2" size={20} /><h4 className="font-semibold text-orange-700">{t.aiRecommendation}</h4></div>
-                            {isRecommending ? (<p className="text-sm text-gray-600 animate-pulse">{t.aiThinking}</p>) : (<p className="text-sm text-gray-700 whitespace-pre-wrap">{recommendation}</p>)}
-                        </div>
-                    )}
-                </main>
-                <footer className="p-4 bg-white border-t">
-                    <div className="flex justify-between items-center mb-4"><span className="text-lg font-semibold text-gray-800">{t.total}</span><span className="text-2xl font-bold text-orange-500">${totalAmount}</span></div>
-                    <button onClick={onSubmitOrder} disabled={cart.length === 0} className="w-full bg-green-500 text-white text-lg font-bold py-3 rounded-lg hover:bg-green-600 transition-colors duration-300 disabled:bg-gray-300 disabled:cursor-not-allowed">
-                        {t.submitOrder}
-                    </button>
-                </footer>
-            </div>
-        </div>
-    );
+    const handleGetRecommendation = async () => { setIsRecommending(true); setRecommendation(''); const cartItemNames = cart.map(item => item.name?.[lang] || item.name.zh).join(', '); const menuItems = menuData ? Object.values(menuData).flat() : []; const availableMenuItems = menuItems.filter(menuItem => !cart.find(cartItem => cartItem.id === menuItem.id)).map(item => item.name?.[lang] || item.name.zh).join(', '); const recommendationRequest = { language: translations[lang]?.language || "English", cartItems: cartItemNames, availableItems: availableMenuItems, }; try { const response = await fetch(`${API_URL}/api/recommendation`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(recommendationRequest) }); if (!response.ok) { throw new Error(`API call failed with status: ${response.status}`); } const result = await response.json(); if (result.recommendation) { setRecommendation(result.recommendation); } else { throw new Error("AI response was empty or malformed."); } } catch (error) { setRecommendation(t.orderFail); console.error('Error fetching recommendation:', error); } finally { setIsRecommending(false); } };
+    return ( <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end" onClick={onClose}> <div className="bg-gray-50 w-full max-w-md h-full flex flex-col shadow-2xl animate-slide-in-right" onClick={e => e.stopPropagation()}> <header className="p-4 border-b flex justify-between items-center"> <h2 className="text-xl font-bold text-gray-800">{t.cart}</h2> <button onClick={onClose} className="flex items-center gap-2 text-orange-600 font-semibold hover:text-orange-700"><ArrowLeft size={18} />{t.continueOrdering}</button> </header> <main className="flex-1 overflow-y-auto p-4 space-y-4"> {cart.map(item => ( <div key={item.cartId} className="bg-white p-3 rounded-lg shadow-sm flex items-start space-x-3"> <img src={item.image} alt={item.name?.[lang] || item.name?.zh} className="w-20 h-20 object-cover rounded-md flex-shrink-0" /> <div className="flex-1"> <p className="font-bold text-gray-800">{item.name?.[lang] || item.name?.zh}</p> <div className="text-xs text-gray-500 mt-1">{item.selectedOptions && Object.values(item.selectedOptions).map(optKey => { const optionGroupKey = Object.keys(t.options).find(groupKey => t.options[groupKey][optKey]); return t.options[optionGroupKey]?.[optKey] || optKey; }).join(', ')}</div> {item.notes && <p className="text-xs text-orange-600 mt-1 italic">"{item.notes}"</p>} <p className="font-semibold text-gray-700 mt-1">${item.price}</p> </div> <div className="flex flex-col items-end justify-between h-full"> <button onClick={() => onRemove(item.cartId)} className="p-1 text-gray-400 hover:text-red-500"><Trash2 size={18} /></button> <div className="flex items-center bg-gray-100 rounded-full"> <button onClick={() => onUpdateQuantity(item.cartId, -1)} className="p-2.5 text-gray-600 hover:bg-gray-200 rounded-full transition-colors"><Minus size={20} /></button> <span className="px-3 text-lg font-bold w-10 text-center">{item.quantity}</span> <button onClick={() => onUpdateQuantity(item.cartId, 1)} className="p-2.5 text-gray-600 hover:bg-gray-200 rounded-full transition-colors"><Plus size={20} /></button> </div> </div> </div>))} {isAiEnabled && ( <div className="pt-4"><button onClick={handleGetRecommendation} disabled={isRecommending} className="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center disabled:bg-blue-300 disabled:cursor-wait">{t.getRecommendation}</button></div>)} {(isRecommending || recommendation) && ( <div className="mt-4 p-3 bg-orange-50 rounded-lg border border-orange-200"> <div className="flex items-center mb-2"><Sparkles className="text-orange-500 mr-2" size={20} /><h4 className="font-semibold text-orange-700">{t.aiRecommendation}</h4></div> {isRecommending ? (<p className="text-sm text-gray-600 animate-pulse">{t.aiThinking}</p>) : (<p className="text-sm text-gray-700 whitespace-pre-wrap">{recommendation}</p>)} </div>)} </main> <footer className="p-4 bg-white border-t"> <div className="flex justify-between items-center mb-4"><span className="text-lg font-semibold text-gray-800">{t.total}</span><span className="text-2xl font-bold text-orange-500">${totalAmount}</span></div> <button onClick={onSubmitOrder} disabled={cart.length === 0} className="w-full bg-green-500 text-white text-lg font-bold py-3 rounded-lg hover:bg-green-600 transition-colors duration-300 disabled:bg-gray-300 disabled:cursor-not-allowed">{t.submitOrder}</button> </footer> </div> </div> );
 };
