@@ -1,14 +1,9 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users, ArrowLeft, ArrowRight, WifiOff, RefreshCw } from 'lucide-react';
 
-// --- 環境變數設定 ---
-// 這一行是 Vite 專案讀取環境變數的標準方式。
-// Vite 在建置專案時，會自動將 `import.meta.env.VITE_API_BASE_URL` 替換為您在 Vercel 上設定的實際網址。
-// 在某些非 Vite 的程式碼檢查工具中 (例如本預覽環境)，可能會看到一個關於 `import.meta` 的 "WARNING" (警告)，
-// 這是因為該工具不認識 Vite 的語法。這個警告是正常的，並不會影響您在本機開發或線上部署的實際運行。
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
-// --- i18n 多國語言資料 (已整合公告內容) ---
+// --- i18n 多國語言資料 ---
 const translations = {
   zh: {
     language: "繁體中文",
@@ -53,49 +48,7 @@ const translations = {
         size: { name: "份量", small: "小份", large: "大份" },
     },
   },
-  en: {
-    language: "English",
-    menu: "Menu",
-    categories: { all: "All", limited: "Limited Time", main: "Main Course", side: "Side Dish", drink: "Drinks", dessert: "Desserts" },
-    announcement: "Announcement",
-    announcements: [
-        { image: "https://placehold.co/600x300/FFF4E6/FF8C00?text=Limited+Time!+Mango+Ice", text: "Enjoy a bowl of refreshing mango shaved ice in the hot summer! Made with fresh local Irwin mangoes." },
-        { image: "https://placehold.co/600x300/E6F7FF/006D77?text=Membership+Open!", text: "Join our membership program today to get a 10% discount and earn points for every purchase!" },
-        { image: "https://placehold.co/600x300/F0E6FF/8338EC?text=Opening+Hours+Update", text: "Dear customers, starting from July 1st, our new opening hours will be 11:00 AM - 10:00 PM." }
-    ],
-    close: "Close",
-    itemDetails: "Item Details",
-    addToCart: "Add to Cart",
-    total: "Total",
-    cart: "Your Order",
-    emptyCart: "Your cart is empty",
-    notes: "Notes",
-    notesPlaceholder: "Any special requests?",
-    table: "Table",
-    headcount: "Guests",
-    quantity: "Quantity",
-    continueOrdering: "Continue Ordering",
-    submitOrder: "Submit Order",
-    confirmOrderTitle: "Confirm your order?",
-    confirmOrderMsg: "Once submitted, the order cannot be changed. Please confirm your items.",
-    cancel: "Cancel",
-    confirm: "Confirm & Submit",
-    orderSuccess: "Order placed successfully!",
-    orderFail: "Order failed, please try again later.",
-    loadingMenu: "Waking up the server, please wait...",
-    loadMenuError: "Could not load menu. Please check your connection or try again later.",
-    retry: "Retry",
-    noItemsInCategory: "No items in this category.",
-    getRecommendation: "✨ Get AI Recommendations",
-    aiRecommendation: "AI Smart Recommendation",
-    aiThinking: "AI assistant is thinking for you...",
-    options: {
-        spice: { name: "Spice Level", none: "Not Spicy", mild: "Mild", medium: "Medium", hot: "Hot" },
-        sugar: { name: "Sugar Level", full: "Normal", less: "Less Sugar", half: "Half Sugar", quarter: "Quarter Sugar", none: "Sugar-Free" },
-        ice: { name: "Ice Level", regular: "Regular Ice", less: "Less Ice", none: "No Ice" },
-        size: { name: "Size", small: "Small", large: "Large" },
-    },
-   },
+  en: { language: "English", /* ... */ },
   ja: { language: "日本語", /* ... */ },
   ko: { language: "한국어", /* ... */ },
 };
