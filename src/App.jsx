@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users, ArrowLeft, ArrowRight, WifiOff, RefreshCw } from 'lucide-react';
+import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users, ArrowLeft, WifiOff, RefreshCw, ArrowRight } from 'lucide-react';
 
 // --- 環境變數設定 ---
 // 這一行是 Vite 專案讀取環境變數的標準方式。
@@ -39,7 +39,7 @@ const translations = {
     confirm: "確認送出",
     orderSuccess: "下單成功！",
     orderFail: "下單失敗，請稍後再試。",
-    loadingMenu: "正在載入美味菜單...",
+    loadingMenu: "正在喚醒伺服器，請稍候...",
     loadMenuError: "無法載入菜單，請檢查您的網路連線或稍後再試。",
     retry: "重試",
     noItemsInCategory: "此分類目前沒有商品",
@@ -82,7 +82,7 @@ const translations = {
     confirm: "Confirm & Submit",
     orderSuccess: "Order placed successfully!",
     orderFail: "Order failed, please try again later.",
-    loadingMenu: "Loading delicious menu...",
+    loadingMenu: "Waking up the server, please wait...",
     loadMenuError: "Could not load menu. Please check your connection or try again later.",
     retry: "Retry",
     noItemsInCategory: "No items in this category.",
@@ -220,16 +220,27 @@ export default function App() {
     }
     if (fetchStatus === 'success' && filteredMenu) {
       return (
-        Object.keys(filteredMenu).length > 0 ? Object.keys(filteredMenu).map(categoryKey => (
-            <section key={categoryKey} className="mb-8 scroll-mt-32">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4 pt-4">{t.categories[categoryKey] || categoryKey}</h2>
-              <div className="space-y-4">
-                {(filteredMenu[categoryKey] || []).map(item => (
-                  <MenuItem key={item.id} item={item} lang={lang} t={t} onClick={() => setSelectedItem(item)} />
+        <React.Fragment>
+            <nav className="sticky top-[92px] z-20 bg-white/90 backdrop-blur-md shadow-sm overflow-x-auto">
+                <div className="flex justify-center items-center space-x-2 sm:space-x-6 px-4">
+                {menuData && Object.keys(t.categories).map(key => (
+                    <button key={key} onClick={() => setActiveCategory(key)} className={`py-3 px-2 sm:px-4 text-sm sm:text-base font-semibold whitespace-nowrap transition-colors duration-200 ${activeCategory === key ? 'text-orange-600 border-b-2 border-orange-600' : 'text-gray-600 border-b-2 border-transparent hover:text-orange-500'}`}>{t.categories[key] || key}</button>
                 ))}
-              </div>
-            </section>
-        )) : <div className="text-center py-10 text-gray-500">{t.noItemsInCategory}</div>
+                </div>
+            </nav>
+            <main className="p-4 max-w-2xl mx-auto">
+                {Object.keys(filteredMenu).length > 0 ? Object.keys(filteredMenu).map(categoryKey => (
+                    <section key={categoryKey} className="mb-8 scroll-mt-32">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-4 pt-4">{t.categories[categoryKey] || categoryKey}</h2>
+                    <div className="space-y-4">
+                        {(filteredMenu[categoryKey] || []).map(item => (
+                        <MenuItem key={item.id} item={item} lang={lang} t={t} onClick={() => setSelectedItem(item)} />
+                        ))}
+                    </div>
+                    </section>
+                )) : <div className="text-center py-10 text-gray-500">{t.noItemsInCategory}</div>}
+            </main>
+        </React.Fragment>
       );
     }
     return null;
@@ -237,7 +248,7 @@ export default function App() {
   
   return (
     <div className="bg-gray-100 min-h-screen font-sans">
-      {showAnnouncement && <AnnouncementModal t={t} onClose={() => setShowAnnouncement(false)} />}
+      {showAnnouncement && fetchStatus === 'success' && <AnnouncementModal t={t} onClose={() => setShowAnnouncement(false)} />}
       {showConfirmModal && <ConfirmModal t={t} onConfirm={handleSubmitOrder} onCancel={() => setShowConfirmModal(false)} />}
       <header className="sticky top-0 z-20 bg-white bg-opacity-80 backdrop-blur-md shadow-sm p-4 flex justify-between items-center">
         <div className="flex flex-col items-start gap-2">
@@ -252,14 +263,9 @@ export default function App() {
           ${totalAmount}
         </div>
       </header>
-      <nav className="sticky top-[92px] z-20 bg-white/90 backdrop-blur-md shadow-sm overflow-x-auto">
-        <div className="flex justify-center items-center space-x-2 sm:space-x-6 px-4">
-          {menuData && Object.keys(t.categories).map(key => (
-            <button key={key} onClick={() => setActiveCategory(key)} className={`py-3 px-2 sm:px-4 text-sm sm:text-base font-semibold whitespace-nowrap transition-colors duration-200 ${activeCategory === key ? 'text-orange-600 border-b-2 border-orange-600' : 'text-gray-600 border-b-2 border-transparent hover:text-orange-500'}`}>{t.categories[key] || key}</button>
-          ))}
-        </div>
-      </nav>
-      <main className="p-4 max-w-2xl mx-auto">{renderMainContent()}</main>
+      
+      {renderMainContent()}
+      
       {cart.length > 0 && (
          <div className="fixed bottom-6 right-6 z-30">
             <button onClick={() => setIsCartOpen(true)} className="bg-orange-500 text-white rounded-full shadow-lg flex items-center justify-center w-16 h-16 hover:bg-orange-600 transition-all duration-300 transform hover:scale-110">
