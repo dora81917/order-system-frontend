@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users, ArrowLeft, ArrowRight, WifiOff } from 'lucide-react';
+import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users, ArrowLeft, ArrowRight, WifiOff, RefreshCw } from 'lucide-react';
 
 // --- 環境變數設定 ---
 // 這一行是 Vite 專案讀取環境變數的標準方式。
@@ -36,6 +36,7 @@ const translations = {
     orderFail: "下單失敗，請稍後再試。",
     loadingMenu: "正在載入美味菜單...",
     loadMenuError: "無法載入菜單，請檢查您的網路連線或稍後再試。",
+    retry: "重試",
     noItemsInCategory: "此分類目前沒有商品",
     getRecommendation: "✨ 讓AI推薦加點菜",
     aiRecommendation: "AI 智慧推薦",
@@ -73,6 +74,7 @@ const translations = {
     orderFail: "Order failed, please try again later.",
     loadingMenu: "Loading delicious menu...",
     loadMenuError: "Could not load menu. Please check your connection or try again later.",
+    retry: "Retry",
     noItemsInCategory: "No items in this category.",
     getRecommendation: "✨ Get AI Recommendations",
     aiRecommendation: "AI Smart Recommendation",
@@ -102,25 +104,17 @@ export default function App() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [showAnnouncement, setShowAnnouncement] = useState(true);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   const t = useMemo(() => translations[lang] || translations.zh, [lang]);
 
   useEffect(() => {
     setFetchStatus('loading');
-    const controller = new AbortController();
-    const signal = controller.signal;
-
-    // 設定一個 30 秒的超時，如果伺服器沒有回應就取消請求
-    const timeoutId = setTimeout(() => {
-        controller.abort();
-        setFetchStatus('error');
-    }, 30000);
-
     const fetchData = async () => {
       try {
         const [menuRes, settingsRes] = await Promise.all([
-          fetch(`${API_URL}/api/menu`, { signal }),
-          fetch(`${API_URL}/api/settings`, { signal })
+          fetch(`${API_URL}/api/menu`),
+          fetch(`${API_URL}/api/settings`)
         ]);
         if (!menuRes.ok || !settingsRes.ok) {
             throw new Error('Network response was not ok');
@@ -131,22 +125,13 @@ export default function App() {
         setIsAiEnabled(settings.isAiEnabled);
         setFetchStatus('success');
       } catch (error) {
-        if (error.name !== 'AbortError') {
-          console.error("無法從後端獲取資料:", error);
-          setFetchStatus('error');
-        }
-      } finally {
-          clearTimeout(timeoutId);
+        console.error("無法從後端獲取資料:", error);
+        setFetchStatus('error');
       }
     };
     
     fetchData();
-
-    return () => {
-        controller.abort();
-        clearTimeout(timeoutId);
-    };
-  }, []);
+  }, [retryCount]);
 
   const handleAddToCart = (item, options, notes, quantity) => {
     const optionsKey = JSON.stringify(Object.keys(options).sort().map(key => `${key}:${options[key]}`));
@@ -210,13 +195,17 @@ export default function App() {
     }
     return result;
   }, [menuData, activeCategory]);
+
+  const handleRetry = () => {
+    setRetryCount(c => c + 1);
+  };
   
   const renderMainContent = () => {
     if (fetchStatus === 'loading') {
       return <MenuSkeleton t={t} />;
     }
     if (fetchStatus === 'error') {
-      return <LoadError t={t} />;
+      return <LoadError t={t} onRetry={handleRetry} />;
     }
     if (fetchStatus === 'success' && filteredMenu) {
       return (
@@ -311,7 +300,7 @@ const LanguageSwitcher = ({ lang, setLang }) => ( <div className="relative"> <se
 const HeadcountSelector = ({ headcount, setHeadcount, t }) => ( <div className="flex items-center space-x-2"> <Users size={20} className="text-gray-600" /> <select value={headcount} onChange={e => setHeadcount(parseInt(e.target.value, 10))} className="appearance-none bg-white bg-opacity-80 backdrop-blur-sm text-gray-800 font-semibold py-2 pl-3 pr-8 rounded-full shadow-md focus:outline-none"> {Array.from({ length: 10 }, (_, i) => i + 1).map(num => ( <option key={num} value={num}>{num} {t.headcount.includes("人") ? "人" : ""}</option> ))} </select> </div> );
 const MenuItem = ({ item, lang, onClick }) => ( <div className="bg-white rounded-xl shadow-md overflow-hidden flex cursor-pointer hover:shadow-lg transition-shadow duration-300" onClick={onClick}> <div className="flex-1 p-4"> <h3 className="font-bold text-lg text-gray-900">{item.name?.[lang] || item.name?.zh}</h3> <p className="text-gray-600 text-sm mt-1">{item.description?.[lang] || item.description?.zh}</p> <p className="font-semibold text-orange-500 mt-2">${item.price}</p> </div> <img src={item.image} alt={item.name?.[lang] || item.name?.zh} className="w-32 h-32 object-cover"/> </div> );
 const MenuSkeleton = ({ t }) => ( <div className="space-y-8 animate-pulse pt-4"> <div className="text-center text-gray-500 font-semibold">{t.loadingMenu}</div> {[...Array(3)].map((_, i) => ( <div key={i}> <div className="h-8 w-1/3 bg-gray-300 rounded-lg mb-4"></div> <div className="space-y-4"> {[...Array(2)].map((_, j) => ( <div key={j} className="bg-white rounded-xl shadow-md overflow-hidden flex"> <div className="flex-1 p-4"> <div className="h-6 w-3/4 bg-gray-300 rounded"></div> <div className="h-4 w-full bg-gray-200 rounded mt-2"></div> <div className="h-4 w-2/3 bg-gray-200 rounded mt-1"></div> <div className="h-5 w-1/4 bg-gray-300 rounded mt-2"></div> </div> <div className="w-32 h-32 bg-gray-300"></div> </div> ))} </div> </div> ))} </div> );
-const LoadError = ({ t }) => ( <div className="text-center py-20"> <WifiOff className="mx-auto h-16 w-16 text-red-400" /> <h3 className="mt-4 text-xl font-semibold text-gray-800">載入失敗</h3> <p className="mt-2 text-gray-500">{t.loadMenuError}</p> </div> );
+const LoadError = ({ t, onRetry }) => ( <div className="text-center py-20"> <WifiOff className="mx-auto h-16 w-16 text-red-400" /> <h3 className="mt-4 text-xl font-semibold text-gray-800">載入失敗</h3> <p className="mt-2 text-gray-500">{t.loadMenuError}</p> <button onClick={onRetry} className="mt-6 inline-flex items-center gap-2 bg-orange-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-orange-600 transition-colors"> <RefreshCw size={18} /> {t.retry} </button> </div> );
 const ItemDetailModal = ({ item, t, lang, onClose, onAddToCart }) => {
   const [selectedOptions, setSelectedOptions] = useState({});
   const [notes, setNotes] = useState('');
