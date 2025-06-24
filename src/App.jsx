@@ -8,13 +8,18 @@ import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users, Arr
 // 這是因為該工具不認識 Vite 的語法。這個警告是正常的，並不會影響您在本機開發或線上部署的實際運行。
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
-// --- i18n 多國語言資料 ---
+// --- i18n 多國語言資料 (已整合公告內容) ---
 const translations = {
   zh: {
     language: "繁體中文",
     menu: "菜單",
     categories: { all: "全部", limited: "期間限定", main: "主餐", side: "附餐", drink: "飲品", dessert: "甜點" },
     announcement: "餐廳公告",
+    announcements: [
+        { image: "https://placehold.co/600x300/FFF4E6/FF8C00?text=期間限定!+夏日芒果冰", text: "炎炎夏日，來一碗清涼消暑的芒果冰吧！本店採用在地愛文芒果，香甜多汁，期間限定優惠中！" },
+        { image: "https://placehold.co/600x300/E6F7FF/006D77?text=會員招募中!", text: "即日起，加入會員即享9折優惠，消費累積點數，好禮換不完！詳情請洽櫃檯人員。" },
+        { image: "https://placehold.co/600x300/F0E6FF/8338EC?text=營業時間調整", text: "親愛的顧客您好，為提供更完善的服務，自7月1日起，本店營業時間調整為 11:00 AM - 10:00 PM。" }
+    ],
     close: "關閉",
     itemDetails: "餐點詳情",
     addToCart: "加入購物車",
@@ -53,6 +58,11 @@ const translations = {
     menu: "Menu",
     categories: { all: "All", limited: "Limited Time", main: "Main Course", side: "Side Dish", drink: "Drinks", dessert: "Desserts" },
     announcement: "Announcement",
+    announcements: [
+        { image: "https://placehold.co/600x300/FFF4E6/FF8C00?text=Limited+Time!+Mango+Ice", text: "Enjoy a bowl of refreshing mango shaved ice in the hot summer! Made with fresh local Irwin mangoes." },
+        { image: "https://placehold.co/600x300/E6F7FF/006D77?text=Membership+Open!", text: "Join our membership program today to get a 10% discount and earn points for every purchase!" },
+        { image: "https://placehold.co/600x300/F0E6FF/8338EC?text=Opening+Hours+Update", text: "Dear customers, starting from July 1st, our new opening hours will be 11:00 AM - 10:00 PM." }
+    ],
     close: "Close",
     itemDetails: "Item Details",
     addToCart: "Add to Cart",
@@ -102,7 +112,7 @@ export default function App() {
   const [isAiEnabled, setIsAiEnabled] = useState(false);
   const [headcount, setHeadcount] = useState(1);
   const [activeCategory, setActiveCategory] = useState('all');
-  const [showAnnouncement, setShowAnnouncement] = useState(true);
+  const [showAnnouncement, setShowAnnouncement] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
@@ -124,6 +134,7 @@ export default function App() {
         setMenuData(menu);
         setIsAiEnabled(settings.isAiEnabled);
         setFetchStatus('success');
+        setShowAnnouncement(true);
       } catch (error) {
         console.error("無法從後端獲取資料:", error);
         setFetchStatus('error');
@@ -265,12 +276,10 @@ export default function App() {
 
 // --- 子組件 ---
 const AnnouncementModal = ({ t, onClose }) => {
-    const announcements = [
-        { image: "https://placehold.co/600x300/FFF4E6/FF8C00?text=期間限定!+夏日芒果冰", text: "炎炎夏日，來一碗清涼消暑的芒果冰吧！本店採用在地愛文芒果，香甜多汁，期間限定優惠中！" },
-        { image: "https://placehold.co/600x300/E6F7FF/006D77?text=會員招募中!", text: "即日起，加入會員即享9折優惠，消費累積點數，好禮換不完！詳情請洽櫃檯人員。" },
-        { image: "https://placehold.co/600x300/F0E6FF/8338EC?text=營業時間調整", text: "親愛的顧客您好，為提供更完善的服務，自7月1日起，本店營業時間調整為 11:00 AM - 10:00 PM。" }
-    ];
+    const announcements = t.announcements || [];
     const [currentIndex, setCurrentIndex] = useState(0);
+    if(announcements.length === 0) return null;
+
     const prevSlide = () => setCurrentIndex(i => (i === 0 ? announcements.length - 1 : i - 1));
     const nextSlide = () => setCurrentIndex(i => (i === announcements.length - 1 ? 0 : i + 1));
     return (
