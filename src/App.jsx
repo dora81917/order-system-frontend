@@ -1,9 +1,14 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users, ArrowLeft, ArrowRight, WifiOff, RefreshCw } from 'lucide-react';
 
+// --- 環境變數設定 ---
+// 這一行是 Vite 專案讀取環境變數的標準方式。
+// Vite 在建置專案時，會自動將 `import.meta.env.VITE_API_BASE_URL` 替換為您在 Vercel 上設定的實際網址。
+// 在某些非 Vite 的程式碼檢查工具中 (例如本預覽環境)，可能會看到一個關於 `import.meta` 的 "WARNING" (警告)，
+// 這是因為該工具不認識 Vite 的語法。這個警告是正常的，並不會影響您在本機開發或線上部署的實際運行。
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
-// --- i18n 多國語言資料 ---
+// --- i18n 多國語言資料 (已整合公告內容並補全所有語言) ---
 const translations = {
   zh: {
     language: "繁體中文",
@@ -48,9 +53,135 @@ const translations = {
         size: { name: "份量", small: "小份", large: "大份" },
     },
   },
-  en: { language: "English", /* ... */ },
-  ja: { language: "日本語", /* ... */ },
-  ko: { language: "한국어", /* ... */ },
+  en: {
+    language: "English",
+    menu: "Menu",
+    categories: { all: "All", limited: "Limited Time", main: "Main Course", side: "Side Dish", drink: "Drinks", dessert: "Desserts" },
+    announcement: "Announcement",
+    announcements: [
+        { image: "https://placehold.co/600x300/FFF4E6/FF8C00?text=Limited+Time!+Mango+Ice", text: "Enjoy a bowl of refreshing mango shaved ice in the hot summer! Made with fresh local Irwin mangoes." },
+        { image: "https://placehold.co/600x300/E6F7FF/006D77?text=Membership+Open!", text: "Join our membership program today to get a 10% discount and earn points for every purchase!" },
+        { image: "https://placehold.co/600x300/F0E6FF/8338EC?text=Opening+Hours+Update", text: "Dear customers, starting from July 1st, our new opening hours will be 11:00 AM - 10:00 PM." }
+    ],
+    close: "Close",
+    itemDetails: "Item Details",
+    addToCart: "Add to Cart",
+    total: "Total",
+    cart: "Your Order",
+    emptyCart: "Your cart is empty",
+    notes: "Notes",
+    notesPlaceholder: "Any special requests?",
+    table: "Table",
+    headcount: "Guests",
+    quantity: "Quantity",
+    continueOrdering: "Continue Ordering",
+    submitOrder: "Submit Order",
+    confirmOrderTitle: "Confirm your order?",
+    confirmOrderMsg: "Once submitted, the order cannot be changed. Please confirm your items.",
+    cancel: "Cancel",
+    confirm: "Confirm & Submit",
+    orderSuccess: "Order placed successfully!",
+    orderFail: "Order failed, please try again later.",
+    loadingMenu: "Waking up the server, please wait...",
+    loadMenuError: "Could not load menu. Please check your connection or try again later.",
+    retry: "Retry",
+    noItemsInCategory: "No items in this category.",
+    getRecommendation: "✨ Get AI Recommendations",
+    aiRecommendation: "AI Smart Recommendation",
+    aiThinking: "AI assistant is thinking for you...",
+    options: {
+        spice: { name: "Spice Level", none: "Not Spicy", mild: "Mild", medium: "Medium", hot: "Hot" },
+        sugar: { name: "Sugar Level", full: "Normal", less: "Less Sugar", half: "Half Sugar", quarter: "Quarter Sugar", none: "Sugar-Free" },
+        ice: { name: "Ice Level", regular: "Regular Ice", less: "Less Ice", none: "No Ice" },
+        size: { name: "Size", small: "Small", large: "Large" },
+    },
+   },
+  ja: {
+    language: "日本語",
+    menu: "メニュー",
+    categories: { all: "すべて", limited: "期間限定", main: "メイン", side: "サイド", drink: "ドリンク", dessert: "デザート" },
+    announcement: "お知らせ",
+    announcements: [
+        { image: "https://placehold.co/600x300/FFF4E6/FF8C00?text=期間限定!+マンゴーかき氷", text: "暑い夏には、さわやかなマンゴーかき氷をどうぞ！地元産の愛文マンゴーを使用し、甘くてジューシー、期間限定の特別価格です。" },
+        { image: "https://placehold.co/600x300/E6F7FF/006D77?text=会員募集中!", text: "本日より、会員になると10%割引！お買い物ごとにポイントが貯まり、素敵な景品と交換できます！" },
+        { image: "https://placehold.co/600x300/F0E6FF/8338EC?text=営業時間変更のお知らせ", text: "お客様へ、より良いサービスを提供するため、7月1日より営業時間を午前11時から午後10時までとさせていただきます。" }
+    ],
+    close: "閉じる",
+    itemDetails: "商品の詳細",
+    addToCart: "カートに追加",
+    total: "合計",
+    cart: "ご注文",
+    emptyCart: "カートは空です",
+    notes: "備考",
+    notesPlaceholder: "特別なご要望はありますか？",
+    table: "テーブル",
+    headcount: "人数",
+    quantity: "数量",
+    continueOrdering: "注文を続ける",
+    submitOrder: "注文を送信",
+    confirmOrderTitle: "注文を確定しますか？",
+    confirmOrderMsg: "送信後の変更はできません。ご注文内容をご確認ください。",
+    cancel: "キャンセル",
+    confirm: "確定する",
+    orderSuccess: "注文に成功しました！",
+    orderFail: "注文に失敗しました。後でもう一度お試しください。",
+    loadingMenu: "サーバーを起動しています、少々お待ちください...",
+    loadMenuError: "メニューを読み込めませんでした。接続を確認するか、後でもう一度お試しください。",
+    retry: "再試行",
+    noItemsInCategory: "このカテゴリには現在商品がありません",
+    getRecommendation: "✨ AIにおすすめを聞く",
+    aiRecommendation: "AIスマート推薦",
+    aiThinking: "AIアシスタントが考えています...",
+    options: {
+        spice: { name: "辛さ", none: "辛くない", mild: "ピリ辛", medium: "中辛", hot: "激辛" },
+        sugar: { name: "甘さ", full: "通常", less: "甘さ控えめ", half: "甘さ半分", quarter: "甘さ微糖", none: "無糖" },
+        ice: { name: "氷", regular: "通常", less: "少なめ", none: "氷なし" },
+        size: { name: "サイズ", small: "小", large: "大" },
+    },
+  },
+  ko: {
+    language: "한국어",
+    menu: "메뉴",
+    categories: { all: "전체", limited: "기간 한정", main: "메인 요리", side: "사이드", drink: "음료", dessert: "디저트" },
+    announcement: "공지사항",
+    announcements: [
+        { image: "https://placehold.co/600x300/FFF4E6/FF8C00?text=기간한정!+망고빙수", text: "더운 여름, 시원한 망고 빙수 한 그릇 즐겨보세요! 현지 애플망고를 사용하여 달콤하고 과즙이 풍부하며, 기간 한정 특별가로 제공됩니다." },
+        { image: "https://placehold.co/600x300/E6F7FF/006D77?text=회원+모집!", text: "지금 회원가입 하시면 10% 할인 혜택과 구매 시마다 포인트 적립, 푸짐한 선물로 교환 가능합니다!" },
+        { image: "https://placehold.co/600x300/F0E6FF/8338EC?text=영업시간+변경+안내", text: "고객님께, 더 나은 서비스를 제공하기 위해 7월 1일부터 영업시간이 오전 11시부터 오후 10시까지로 변경됩니다." }
+    ],
+    close: "닫기",
+    itemDetails: "상품 상세",
+    addToCart: "카트에 추가",
+    total: "총액",
+    cart: "주문 내역",
+    emptyCart: "장바구니가 비어 있습니다",
+    notes: "메모",
+    notesPlaceholder: "특별한 요청 있으신가요?",
+    table: "테이블",
+    headcount: "인원수",
+    quantity: "수량",
+    continueOrdering: "계속 주문하기",
+    submitOrder: "주문 제출",
+    confirmOrderTitle: "주문을 제출하시겠습니까?",
+    confirmOrderMsg: "제출된 주문은 수정할 수 없습니다. 주문 내역을 확인해주세요.",
+    cancel: "취소",
+    confirm: "제출",
+    orderSuccess: "주문이 완료되었습니다!",
+    orderFail: "주문에 실패했습니다. 나중에 다시 시도해주세요.",
+    loadingMenu: "서버를 깨우는 중입니다. 잠시만 기다려 주세요...",
+    loadMenuError: "메뉴를 불러올 수 없습니다. 인터넷 연결을 확인하거나 나중에 다시 시도해주세요.",
+    retry: "재시도",
+    noItemsInCategory: "이 카테고리에는 현재 상품이 없습니다",
+    getRecommendation: "✨ AI에게 추천받기",
+    aiRecommendation: "AI 스마트 추천",
+    aiThinking: "AI 어시스턴트가 생각 중입니다...",
+    options: {
+        spice: { name: "맵기", none: "안 매운맛", mild: "순한 맛", medium: "중간 맛", hot: "매운맛" },
+        sugar: { name: "당도", full: "정상", less: "덜 달게", half: "중간", quarter: "약간 달게", none: "무설탕" },
+        ice: { name: "얼음", regular: "보통", less: "적게", none: "없이" },
+        size: { name: "사이즈", small: "소", large: "대" },
+    },
+  },
 };
 
 
