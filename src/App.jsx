@@ -2,13 +2,15 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users, ArrowLeft, ArrowRight, WifiOff, RefreshCw } from 'lucide-react';
 
 // --- 環境變數設定 ---
-// 這一行是 Vite 專案讀取環境變數的標準方式。
-// Vite 在建置專案時，會自動將 `import.meta.env.VITE_API_BASE_URL` 替換為您在 Vercel 上設定的實際網址。
-// 在某些非 Vite 的程式碼檢查工具中 (例如本預覽環境)，可能會看到一個關於 `import.meta` 的 "WARNING" (警告)，
-// 這是因為該工具不認識 Vite 的語法。這個警告是正常的，並不會影響您在本機開發或線上部署的實際運行。
+// 【重要說明】
+// 這一行是 Vite 專案讀取環境變數的標準、正確寫法。
+// 您看到的 `[WARNING] "import.meta" is not available...` 警告，
+// 是因為預覽環境的程式碼檢查工具不認識 Vite 的這個特定語法。
+// 這個警告【不會】影響您在本機用 `npm run dev` 進行開發，也【不會】影響您最終部署到 Vercel 的網站功能。
+// 請您可以放心忽略此警告，繼續進行開發與部署。
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
-// --- i18n 多國語言資料 (已補全所有語言) ---
+// --- i18n 多國語言資料 (已補全所有語言翻譯) ---
 const translations = {
   zh: {
     language: "繁體中文",
@@ -16,7 +18,7 @@ const translations = {
     categories: { all: "全部", limited: "主廚推薦", main: "經典主食", side: "美味附餐", drink: "清涼飲品", dessert: "飯後甜點" },
     announcement: "最新消息",
     announcements: [
-        { image: "https://images.pexels.com/photos/5938363/pexels-photo-5938363.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "炎炎夏日，來一碗清涼消暑的芒果冰吧！本店採用在地愛文芒果，香甜多汁，期間限定優惠中！" },
+        { image: "https://images.pexels.com/photos/1092730/pexels-photo-1092730.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "炎炎夏日，來一碗清涼消暑的芒果冰吧！本店採用在地愛文芒果，香甜多汁，期間限定優惠中！" },
         { image: "https://images.pexels.com/photos/1893557/pexels-photo-1893557.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "即日起，加入會員即享9折優惠，消費累積點數，好禮換不完！詳情請洽櫃檯人員。" },
         { image: "https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "親愛的顧客您好，為提供更完善的服務，自7月1日起，本店營業時間調整為 11:00 AM - 10:00 PM。" }
     ],
@@ -59,7 +61,7 @@ const translations = {
     categories: { all: "All", limited: "Chef's Special", main: "Main Course", side: "Side Dish", drink: "Drinks", dessert: "Desserts" },
     announcement: "Latest News",
     announcements: [
-        { image: "https://images.pexels.com/photos/5938363/pexels-photo-5938363.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "Enjoy a bowl of refreshing mango shaved ice in the hot summer! Made with fresh local Irwin mangoes." },
+        { image: "https://images.pexels.com/photos/1092730/pexels-photo-1092730.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "Enjoy a bowl of refreshing mango shaved ice in the hot summer! Made with fresh local Irwin mangoes." },
         { image: "https://images.pexels.com/photos/1893557/pexels-photo-1893557.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "Join our membership program today to get a 10% discount and earn points for every purchase!" },
         { image: "https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "Dear customers, starting from July 1st, our new opening hours will be 11:00 AM - 10:00 PM." }
     ],
@@ -102,7 +104,7 @@ const translations = {
     categories: { all: "すべて", limited: "シェフのおすすめ", main: "メイン", side: "サイド", drink: "ドリンク", dessert: "デザート" },
     announcement: "お知らせ",
     announcements: [
-        { image: "https://images.pexels.com/photos/5938363/pexels-photo-5938363.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "暑い夏には、さわやかなマンゴーかき氷をどうぞ！地元産の愛文マンゴーを使用し、甘くてジューシー、期間限定の特別価格です。" },
+        { image: "https://images.pexels.com/photos/1092730/pexels-photo-1092730.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "暑い夏には、さわやかなマンゴーかき氷をどうぞ！地元産の愛文マンゴーを使用し、甘くてジューシー、期間限定の特別価格です。" },
         { image: "https://images.pexels.com/photos/1893557/pexels-photo-1893557.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "本日より、会員になると10%割引！お買い物ごとにポイントが貯まり、素敵な景品と交換できます！" },
         { image: "https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "お客様へ、より良いサービスを提供するため、7月1日より営業時間を午前11時から午後10時までとさせていただきます。" }
     ],
@@ -145,7 +147,7 @@ const translations = {
     categories: { all: "전체", limited: "셰프 추천", main: "메인 요리", side: "사이드", drink: "음료", dessert: "디저트" },
     announcement: "공지사항",
     announcements: [
-        { image: "https://images.pexels.com/photos/5938363/pexels-photo-5938363.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "더운 여름, 시원한 망고 빙수 한 그릇 즐겨보세요! 현지 애플망고를 사용하여 달콤하고 과즙이 풍부하며, 기간 한정 특별가로 제공됩니다." },
+        { image: "https://images.pexels.com/photos/1092730/pexels-photo-1092730.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "더운 여름, 시원한 망고 빙수 한 그릇 즐겨보세요! 현지 애플망고를 사용하여 달콤하고 과즙이 풍부하며, 기간 한정 특별가로 제공됩니다." },
         { image: "https://images.pexels.com/photos/1893557/pexels-photo-1893557.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "지금 회원가입 하시면 10% 할인 혜택과 구매 시마다 포인트 적립, 푸짐한 선물로 교환 가능합니다!" },
         { image: "https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "고객님께, 더 나은 서비스를 제공하기 위해 7월 1일부터 영업시간이 오전 11시부터 오후 10시까지로 변경됩니다." }
     ],
@@ -190,7 +192,7 @@ export default function App() {
   const [lang, setLang] = useState('zh');
   const [cart, setCart] = useState([]);
   const [menuData, setMenuData] = useState(null);
-  const [fetchStatus, setFetchStatus] = useState('loading'); // 'loading', 'success', 'error'
+  const [fetchStatus, setFetchStatus] = useState('loading');
   const [selectedItem, setSelectedItem] = useState(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAiEnabled, setIsAiEnabled] = useState(false);
@@ -374,17 +376,28 @@ export default function App() {
 const AnnouncementModal = ({ t, onClose }) => {
     const announcements = t.announcements || [];
     const [currentIndex, setCurrentIndex] = useState(0);
+    const touchStartX = useRef(0);
+    const touchEndX = useRef(0);
+
     if(announcements.length === 0) return null;
 
     const prevSlide = () => setCurrentIndex(i => (i === 0 ? announcements.length - 1 : i - 1));
     const nextSlide = () => setCurrentIndex(i => (i === announcements.length - 1 ? 0 : i + 1));
+    
+    const handleTouchStart = (e) => touchStartX.current = e.targetTouches[0].clientX;
+    const handleTouchMove = (e) => touchEndX.current = e.targetTouches[0].clientX;
+    const handleTouchEnd = () => {
+        if (touchStartX.current - touchEndX.current > 50) nextSlide();
+        if (touchStartX.current - touchEndX.current < -50) prevSlide();
+    };
+
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 z-[60] flex justify-center items-center p-4">
-            <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl p-6 text-center animate-slide-up relative overflow-hidden">
+            <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl p-6 text-center animate-slide-up relative" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
                 <h2 className="text-2xl font-bold text-orange-500 mb-4">{t.announcement}</h2>
-                <div className="relative h-80">
+                <div className="relative h-80 overflow-hidden">
                     {announcements.map((ann, index) => (
-                        <div key={index} className={`absolute top-0 left-0 w-full h-full transition-opacity duration-500 ease-in-out ${index === currentIndex ? 'opacity-100' : 'opacity-0'}`}>
+                        <div key={index} className="absolute top-0 left-0 w-full h-full transition-transform duration-500 ease-in-out" style={{ transform: `translateX(${(index - currentIndex) * 100}%)` }}>
                             <img src={ann.image} alt={`Announcement ${index + 1}`} className="w-full h-48 object-cover rounded-lg mb-4" />
                             <p className="text-gray-700">{ann.text}</p>
                         </div>
