@@ -346,7 +346,6 @@ export default function App() {
             </div>
         </div>
         <div className="absolute left-1/2 -translate-x-1/2 text-center">
-            {/* <img src="your-logo-url.png" alt="Restaurant Logo" className="h-12 mx-auto" /> */}
             <div className="font-bold text-xl text-gray-800">{t.menu}</div>
             <div className="text-sm text-gray-500 mt-1">{t.table}: A1</div>
         </div>
