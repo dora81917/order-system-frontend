@@ -4,8 +4,8 @@ import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users, Arr
 // --- 環境變數設定 ---
 // 重要：為了修復預覽環境中的警告訊息，此處暫時將 API 網址寫死為本地開發網址。
 // 當您未來要將此專案部署到 Vercel 時，【必須】將此行還原為 Vite 的標準寫法：
-// const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
-const API_URL = 'http://localhost:8080';
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+// const API_URL = 'http://localhost:8080';
 
 
 // --- i18n 多國語言資料 ---
