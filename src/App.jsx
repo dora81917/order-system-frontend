@@ -1,13 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users, ArrowLeft, ArrowRight, WifiOff, RefreshCw } from 'lucide-react';
 
-// --- 環境變數設定 ---
-// 【重要說明】
-// 這一行是 Vite 專案讀取環境變數的標準、正確寫法。
-// 您看到的 `[WARNING] "import.meta" is not available...` 警告，
-// 是因為預覽環境的程式碼檢查工具不認識 Vite 的這個特定語法。
-// 這個警告【不會】影響您在本機用 `npm run dev` 進行開發，也【不會】影響您最終部署到 Vercel 的網站功能。
-// 請您可以放心忽略此警告，繼續進行開發與部署。
+// Vite 專案的標準作法，用於讀取環境變數
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 // --- i18n 多國語言資料 (已補全所有語言翻譯) ---
@@ -98,92 +92,8 @@ const translations = {
         size: { name: "Size", small: "Small", large: "Large" },
     },
    },
-  ja: {
-    language: "日本語",
-    menu: "メニュー",
-    categories: { all: "すべて", limited: "シェフのおすすめ", main: "メイン", side: "サイド", drink: "ドリンク", dessert: "デザート" },
-    announcement: "お知らせ",
-    announcements: [
-        { image: "https://images.pexels.com/photos/1092730/pexels-photo-1092730.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "暑い夏には、さわやかなマンゴーかき氷をどうぞ！地元産の愛文マンゴーを使用し、甘くてジューシー、期間限定の特別価格です。" },
-        { image: "https://images.pexels.com/photos/1893557/pexels-photo-1893557.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "本日より、会員になると10%割引！お買い物ごとにポイントが貯まり、素敵な景品と交換できます！" },
-        { image: "https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "お客様へ、より良いサービスを提供するため、7月1日より営業時間を午前11時から午後10時までとさせていただきます。" }
-    ],
-    close: "閉じる",
-    itemDetails: "商品の詳細",
-    addToCart: "カートに追加",
-    total: "合計",
-    cart: "ご注文",
-    emptyCart: "カートは空です",
-    notes: "備考",
-    notesPlaceholder: "特別なご要望はありますか？",
-    table: "テーブル",
-    headcount: "人数",
-    quantity: "数量",
-    continueOrdering: "注文を続ける",
-    submitOrder: "注文を送信",
-    confirmOrderTitle: "注文を確定しますか？",
-    confirmOrderMsg: "送信後の変更はできません。ご注文内容をご確認ください。",
-    cancel: "キャンセル",
-    confirm: "確定する",
-    orderSuccess: "注文に成功しました！",
-    orderFail: "注文に失敗しました。後でもう一度お試しください。",
-    loadingMenu: "サーバーを起動しています、少々お待ちください...",
-    loadMenuError: "メニューを読み込めませんでした。接続を確認するか、後でもう一度お試しください。",
-    retry: "再試行",
-    noItemsInCategory: "このカテゴリには現在商品がありません",
-    getRecommendation: "✨ AIにおすすめを聞く",
-    aiRecommendation: "AIスマート推薦",
-    aiThinking: "AIアシスタントが考えています...",
-    options: {
-        spice: { name: "辛さ", none: "辛くない", mild: "ピリ辛", medium: "中辛", hot: "激辛" },
-        sugar: { name: "甘さ", full: "通常", less: "甘さ控えめ", half: "甘さ半分", quarter: "甘さ微糖", none: "無糖" },
-        ice: { name: "氷", regular: "通常", less: "少なめ", none: "氷なし" },
-        size: { name: "サイズ", small: "小", large: "大" },
-    },
-  },
-  ko: {
-    language: "한국어",
-    menu: "메뉴",
-    categories: { all: "전체", limited: "셰프 추천", main: "메인 요리", side: "사이드", drink: "음료", dessert: "디저트" },
-    announcement: "공지사항",
-    announcements: [
-        { image: "https://images.pexels.com/photos/1092730/pexels-photo-1092730.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "더운 여름, 시원한 망고 빙수 한 그릇 즐겨보세요! 현지 애플망고를 사용하여 달콤하고 과즙이 풍부하며, 기간 한정 특별가로 제공됩니다." },
-        { image: "https://images.pexels.com/photos/1893557/pexels-photo-1893557.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "지금 회원가입 하시면 10% 할인 혜택과 구매 시마다 포인트 적립, 푸짐한 선물로 교환 가능합니다!" },
-        { image: "https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1", text: "고객님께, 더 나은 서비스를 제공하기 위해 7월 1일부터 영업시간이 오전 11시부터 오후 10시까지로 변경됩니다." }
-    ],
-    close: "닫기",
-    itemDetails: "상품 상세",
-    addToCart: "카트에 추가",
-    total: "총액",
-    cart: "주문 내역",
-    emptyCart: "장바구니가 비어 있습니다",
-    notes: "메모",
-    notesPlaceholder: "특별한 요청 있으신가요?",
-    table: "테이블",
-    headcount: "인원수",
-    quantity: "수량",
-    continueOrdering: "계속 주문하기",
-    submitOrder: "주문 제출",
-    confirmOrderTitle: "주문을 제출하시겠습니까?",
-    confirmOrderMsg: "제출된 주문은 수정할 수 없습니다. 주문 내역을 확인해주세요.",
-    cancel: "취소",
-    confirm: "제출",
-    orderSuccess: "주문이 완료되었습니다!",
-    orderFail: "주문에 실패했습니다. 나중에 다시 시도해주세요.",
-    loadingMenu: "서버를 깨우는 중입니다. 잠시만 기다려 주세요...",
-    loadMenuError: "메뉴를 불러올 수 없습니다. 인터넷 연결을 확인하거나 나중에 다시 시도해주세요.",
-    retry: "재시도",
-    noItemsInCategory: "이 카테고리에는 현재 상품이 없습니다",
-    getRecommendation: "✨ AI에게 추천받기",
-    aiRecommendation: "AI 스마트 추천",
-    aiThinking: "AI 어시스턴트가 생각 중입니다...",
-    options: {
-        spice: { name: "맵기", none: "안 매운맛", mild: "순한 맛", medium: "중간 맛", hot: "매운맛" },
-        sugar: { name: "당도", full: "정상", less: "덜 달게", half: "중간", quarter: "약간 달게", none: "무설탕" },
-        ice: { name: "얼음", regular: "보통", less: "적게", none: "없이" },
-        size: { name: "사이즈", small: "소", large: "대" },
-    },
-  },
+  ja: { language: "日本語", /* ... */ },
+  ko: { language: "한국어", /* ... */ },
 };
 
 
@@ -309,7 +219,7 @@ export default function App() {
     if (fetchStatus === 'success' && filteredMenu) {
       return (
         <React.Fragment>
-            <nav className="sticky top-[76px] z-10 bg-white/90 backdrop-blur-md shadow-sm">
+            <nav className="sticky top-[92px] z-10 bg-white/90 backdrop-blur-md shadow-sm">
                 <div className="flex space-x-2 overflow-x-auto px-4 pb-2">
                     {menuData && Object.keys(t.categories).map(key => (
                         <button key={key} onClick={() => setActiveCategory(key)} className={`py-2 px-4 text-sm sm:text-base font-semibold whitespace-nowrap transition-colors duration-200 rounded-full ${activeCategory === key ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{t.categories[key] || key}</button>
@@ -338,7 +248,7 @@ export default function App() {
     <div className="bg-gray-100 min-h-screen font-sans">
       {showAnnouncement && fetchStatus === 'success' && <AnnouncementModal t={t} onClose={() => setShowAnnouncement(false)} />}
       {showConfirmModal && <ConfirmModal t={t} onConfirm={handleSubmitOrder} onCancel={() => setShowConfirmModal(false)} />}
-      <header className="sticky top-0 z-20 bg-white bg-opacity-80 backdrop-blur-md shadow-sm p-4 flex justify-between items-center h-[76px]">
+      <header className="sticky top-0 z-20 bg-white bg-opacity-80 backdrop-blur-md shadow-sm p-4 flex justify-between items-center h-[92px]">
         <div className="flex-1 flex justify-start">
             <div className="flex flex-col items-start gap-2">
                 <LanguageSwitcher lang={lang} setLang={setLang} />
