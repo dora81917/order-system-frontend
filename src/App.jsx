@@ -2,10 +2,13 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users, ArrowLeft, ArrowRight, WifiOff, RefreshCw } from 'lucide-react';
 
 // --- 環境變數設定 ---
-// 【重要說明】為了修復預覽環境中的警告訊息，此處暫時將 API 網址寫死為本地開發網址。
-// 當您未來要將此專案部署到 Vercel 時，【必須】將此行還原為 Vite 的標準寫法：
-// const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
-const API_URL = 'http://localhost:8080';
+// 【重要說明】
+// 這一行是 Vite 專案讀取環境變數的標準、正確寫法。
+// 您看到的 `[WARNING] "import.meta" is not available...` 警告，
+// 是因為預覽環境的程式碼檢查工具不認識 Vite 的這個特定語法。
+// 這個警告是正常的，並不會影響您在本機用 `npm run dev` 進行開發，也【不會】影響您最終部署到 Vercel 的網站功能。
+// 請您可以放心忽略此警告，繼續進行開發與部署。
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 // --- i18n 多國語言資料 (已補全所有語言翻譯) ---
 const translations = {
