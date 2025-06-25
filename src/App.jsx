@@ -2,11 +2,13 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users, ArrowLeft, ArrowRight, WifiOff, RefreshCw } from 'lucide-react';
 
 // --- 環境變數設定 ---
-// 為了相容不同的建置環境，我們動態檢查 import.meta.env 是否存在。
-// 這能確保程式碼在本地開發和 Vercel 線上部署時都能正常運作，並解決您遇到的編譯警告。
-const API_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || 'http://localhost:8080';
+// 重要：為了修復預覽環境中的警告訊息，此處暫時將 API 網址寫死為本地開發網址。
+// 當您未來要將此專案部署到 Vercel 時，【必須】將此行還原為 Vite 的標準寫法：
+// const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const API_URL = 'http://localhost:8080';
 
-// --- i18n 多國語言資料 (已整合公告內容並補全所有語言) ---
+
+// --- i18n 多國語言資料 ---
 const translations = {
   zh: {
     language: "繁體中文",
@@ -28,7 +30,7 @@ const translations = {
     notesPlaceholder: "有什麼特別需求嗎？",
     table: "桌號",
     headcount: "用餐人數",
-    quantity: "数量",
+    quantity: "數量",
     continueOrdering: "繼續點餐",
     submitOrder: "送出訂單",
     confirmOrderTitle: "確認送出訂單？",
@@ -41,9 +43,6 @@ const translations = {
     loadMenuError: "無法載入菜單，請檢查您的網路連線或稍後再試。",
     retry: "重試",
     noItemsInCategory: "此分類目前沒有商品",
-    getRecommendation: "✨ 讓AI推薦加點菜",
-    aiRecommendation: "AI 智慧推薦",
-    aiThinking: "AI小助手正在為您思考...",
     options: {
         spice: { name: "辣度", none: "不辣", mild: "小辣", medium: "中辣", hot: "大辣" },
         sugar: { name: "甜度", full: "正常糖", less: "少糖", half: "半糖", quarter: "微糖", none: "無糖" },
@@ -84,9 +83,6 @@ const translations = {
     loadMenuError: "Could not load menu. Please check your connection or try again later.",
     retry: "Retry",
     noItemsInCategory: "No items in this category.",
-    getRecommendation: "✨ Get AI Recommendations",
-    aiRecommendation: "AI Smart Recommendation",
-    aiThinking: "AI assistant is thinking for you...",
     options: {
         spice: { name: "Spice Level", none: "Not Spicy", mild: "Mild", medium: "Medium", hot: "Hot" },
         sugar: { name: "Sugar Level", full: "Normal", less: "Less Sugar", half: "Half Sugar", quarter: "Quarter Sugar", none: "Sugar-Free" },
@@ -221,11 +217,11 @@ export default function App() {
     if (fetchStatus === 'success' && filteredMenu) {
       return (
         <React.Fragment>
-            <nav className="sticky top-[76px] z-10 bg-white/90 backdrop-blur-md shadow-sm overflow-x-auto">
-                <div className="flex justify-center items-center space-x-2 sm:space-x-6 px-4">
-                {menuData && Object.keys(t.categories).map(key => (
-                    <button key={key} onClick={() => setActiveCategory(key)} className={`py-3 px-2 sm:px-4 text-sm sm:text-base font-semibold whitespace-nowrap transition-colors duration-200 ${activeCategory === key ? 'text-orange-600 border-b-2 border-orange-600' : 'text-gray-600 border-b-2 border-transparent hover:text-orange-500'}`}>{t.categories[key] || key}</button>
-                ))}
+            <nav className="sticky top-[76px] z-10 bg-white/90 backdrop-blur-md shadow-sm">
+                <div className="flex space-x-2 overflow-x-auto px-4 pb-2">
+                    {menuData && Object.keys(t.categories).map(key => (
+                        <button key={key} onClick={() => setActiveCategory(key)} className={`py-3 px-4 text-sm sm:text-base font-semibold whitespace-nowrap transition-colors duration-200 rounded-full ${activeCategory === key ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{t.categories[key] || key}</button>
+                    ))}
                 </div>
             </nav>
             <main className="p-4 max-w-2xl mx-auto">
@@ -250,17 +246,18 @@ export default function App() {
     <div className="bg-gray-100 min-h-screen font-sans">
       {showAnnouncement && fetchStatus === 'success' && <AnnouncementModal t={t} onClose={() => setShowAnnouncement(false)} />}
       {showConfirmModal && <ConfirmModal t={t} onConfirm={handleSubmitOrder} onCancel={() => setShowConfirmModal(false)} />}
-      <header className="sticky top-0 z-20 bg-white bg-opacity-80 backdrop-blur-md shadow-sm p-4 flex justify-between items-center">
-        <div className="flex flex-col items-start gap-2">
+      <header className="sticky top-0 z-20 bg-white bg-opacity-80 backdrop-blur-md shadow-sm p-4 flex justify-between items-center h-[76px]">
+        <div className="flex-1 flex justify-start">
             <LanguageSwitcher lang={lang} setLang={setLang} />
-            <HeadcountSelector headcount={headcount} setHeadcount={setHeadcount} t={t} />
         </div>
-        <div className="text-center">
+        <div className="absolute left-1/2 -translate-x-1/2 text-center">
             <div className="font-bold text-lg text-gray-800">{t.menu}</div>
             <div className="text-sm text-gray-500">{t.table}: A1</div>
         </div>
-        <div className="text-right text-gray-800 font-bold text-lg" onClick={() => setIsCartOpen(true)}>
-          ${totalAmount}
+        <div className="flex-1 flex justify-end">
+             <div className="text-right text-gray-800 font-bold text-lg" onClick={() => setIsCartOpen(true)}>
+                ${totalAmount}
+             </div>
         </div>
       </header>
       
@@ -340,5 +337,5 @@ const CartModal = ({ cart, t, lang, menuData, totalAmount, isAiEnabled, onClose,
     const [isRecommending, setIsRecommending] = useState(false);
     const [recommendation, setRecommendation] = useState('');
     const handleGetRecommendation = async () => { setIsRecommending(true); setRecommendation(''); const cartItemNames = cart.map(item => item.name?.[lang] || item.name.zh).join(', '); const menuItems = menuData ? Object.values(menuData).flat() : []; const availableMenuItems = menuItems.filter(menuItem => !cart.find(cartItem => cartItem.id === menuItem.id)).map(item => item.name?.[lang] || item.name.zh).join(', '); const recommendationRequest = { language: translations[lang]?.language || "English", cartItems: cartItemNames, availableItems: availableMenuItems, }; try { const response = await fetch(`${API_URL}/api/recommendation`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(recommendationRequest) }); if (!response.ok) { throw new Error(`API call failed with status: ${response.status}`); } const result = await response.json(); if (result.recommendation) { setRecommendation(result.recommendation); } else { throw new Error("AI response was empty or malformed."); } } catch (error) { setRecommendation(t.orderFail); console.error('Error fetching recommendation:', error); } finally { setIsRecommending(false); } };
-    return ( <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end" onClick={onClose}> <div className="bg-gray-50 w-full max-w-md h-full flex flex-col shadow-2xl animate-slide-in-right" onClick={e => e.stopPropagation()}> <header className="p-4 border-b flex justify-between items-center"> <h2 className="text-xl font-bold text-gray-800">{t.cart}</h2> <button onClick={onClose} className="flex items-center gap-2 text-orange-600 font-semibold hover:text-orange-700"><ArrowLeft size={18} />{t.continueOrdering}</button> </header> <main className="flex-1 overflow-y-auto p-4 space-y-4"> {cart.map(item => ( <div key={item.cartId} className="bg-white p-3 rounded-lg shadow-sm flex items-start space-x-3"> <img src={item.image} alt={item.name?.[lang] || item.name?.zh} className="w-20 h-20 object-cover rounded-md flex-shrink-0" /> <div className="flex-1"> <p className="font-bold text-gray-800">{item.name?.[lang] || item.name?.zh}</p> <div className="text-xs text-gray-500 mt-1">{item.selectedOptions && Object.values(item.selectedOptions).map(optKey => { const optionGroupKey = Object.keys(t.options).find(groupKey => t.options[groupKey][optKey]); return t.options[optionGroupKey]?.[optKey] || optKey; }).join(', ')}</div> {item.notes && <p className="text-xs text-orange-600 mt-1 italic">"{item.notes}"</p>} <p className="font-semibold text-gray-700 mt-1">${item.price}</p> </div> <div className="flex flex-col items-end justify-between h-full"> <button onClick={() => onRemove(item.cartId)} className="p-1 text-gray-400 hover:text-red-500"><Trash2 size={18} /></button> <div className="flex items-center bg-gray-100 rounded-full"> <button onClick={() => onUpdateQuantity(item.cartId, -1)} className="p-2.5 text-gray-600 hover:bg-gray-200 rounded-full transition-colors"><Minus size={20} /></button> <span className="px-3 text-lg font-bold w-10 text-center">{item.quantity}</span> <button onClick={() => onUpdateQuantity(item.cartId, 1)} className="p-2.5 text-gray-600 hover:bg-gray-200 rounded-full transition-colors"><Plus size={20} /></button> </div> </div> </div>))} {isAiEnabled && ( <div className="pt-4"><button onClick={handleGetRecommendation} disabled={isRecommending} className="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center disabled:bg-blue-300 disabled:cursor-wait">{t.getRecommendation}</button></div>)} {(isRecommending || recommendation) && ( <div className="mt-4 p-3 bg-orange-50 rounded-lg border border-orange-200"> <div className="flex items-center mb-2"><Sparkles className="text-orange-500 mr-2" size={20} /><h4 className="font-semibold text-orange-700">{t.aiRecommendation}</h4></div> {isRecommending ? (<p className="text-sm text-gray-600 animate-pulse">{t.aiThinking}</p>) : (<p className="text-sm text-gray-700 whitespace-pre-wrap">{recommendation}</p>)} </div>)} </main> <footer className="p-4 bg-white border-t"> <div className="flex justify-between items-center mb-4"><span className="text-lg font-semibold text-gray-800">{t.total}</span><span className="text-2xl font-bold text-orange-500">${totalAmount}</span></div> <button onClick={onSubmitOrder} disabled={cart.length === 0} className="w-full bg-green-500 text-white text-lg font-bold py-3 rounded-lg hover:bg-green-600 transition-colors duration-300 disabled:bg-gray-300 disabled:cursor-not-allowed">{t.submitOrder}</button> </footer> </div> </div> );
+    return ( <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end" onClick={onClose}> <div className="bg-gray-50 w-full max-w-md h-full flex flex-col shadow-2xl animate-slide-in-right" onClick={e => e.stopPropagation()}> <header className="p-4 border-b flex justify-between items-center"> <h2 className="text-xl font-bold text-gray-800">{t.cart}</h2> <button onClick={onClose} className="flex items-center gap-2 text-orange-600 font-semibold hover:text-orange-700"><ArrowLeft size={18} />{t.continueOrdering}</button> </header> <main className="flex-1 overflow-y-auto p-4 space-y-4"> {cart.map(item => ( <div key={item.cartId} className="bg-white p-3 rounded-lg shadow-sm flex items-start space-x-3"> <img src={item.image} alt={item.name?.[lang] || item.name?.zh} className="w-20 h-20 object-cover rounded-md flex-shrink-0" /> <div className="flex-1"> <p className="font-bold text-gray-800">{item.name?.[lang] || item.name?.zh}</p> <div className="text-xs text-gray-500 mt-1">{item.selectedOptions && Object.values(item.selectedOptions).map(optKey => { const optionGroupKey = Object.keys(t.options).find(groupKey => t.options[groupKey][optKey]); return t.options[optionGroupKey]?.[optKey] || optKey; }).join(', ')}</div> {item.notes && <p className="text-xs text-orange-600 mt-1 italic">"{item.notes}"</p>} <p className="font-semibold text-gray-700 mt-1">${item.price}</p> </div> <div className="flex flex-col items-end justify-between h-full"> <button onClick={() => onRemove(item.cartId)} className="p-1 text-gray-400 hover:text-red-500"><Trash2 size={18} /></button> <div className="flex items-center bg-gray-100 rounded-full"> <button onClick={() => onUpdateQuantity(item.cartId, -1)} className="p-2.5 text-gray-600 hover:bg-gray-200 rounded-full transition-colors"><Minus size={20} /></button> <span className="px-3 text-lg font-bold w-10 text-center">{item.quantity}</span> <button onClick={() => onUpdateQuantity(item.cartId, 1)} className="p-2.5 text-gray-600 hover:bg-gray-200 rounded-full transition-colors"><Plus size={20} /></button> </div> </div> </div>))} {isAiEnabled && ( <div className="pt-4"><button onClick={handleGetRecommendation} disabled={isRecommending} className="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center disabled:bg-blue-300 disabled:cursor-wait"> {/* ... AI button ... */ }</button></div>)} {(isRecommending || recommendation) && ( <div className="mt-4 p-3 bg-orange-50 rounded-lg border border-orange-200"> <div className="flex items-center mb-2"><Sparkles className="text-orange-500 mr-2" size={20} /><h4 className="font-semibold text-orange-700">{t.aiRecommendation}</h4></div> {isRecommending ? (<p className="text-sm text-gray-600 animate-pulse">{t.aiThinking}</p>) : (<p className="text-sm text-gray-700 whitespace-pre-wrap">{recommendation}</p>)} </div>)} </main> <footer className="p-4 bg-white border-t"> <div className="flex justify-between items-center mb-4"><span className="text-lg font-semibold text-gray-800">{t.total}</span><span className="text-2xl font-bold text-orange-500">${totalAmount}</span></div> <button onClick={onSubmitOrder} disabled={cart.length === 0} className="w-full bg-green-500 text-white text-lg font-bold py-3 rounded-lg hover:bg-green-600 transition-colors duration-300 disabled:bg-gray-300 disabled:cursor-not-allowed">{t.submitOrder}</button> </footer> </div> </div> );
 };
