@@ -309,7 +309,7 @@ export default function App() {
     if (fetchStatus === 'success' && filteredMenu) {
       return (
         <React.Fragment>
-            <nav className="sticky top-[92px] z-10 bg-white/90 backdrop-blur-md shadow-sm">
+            <nav className="sticky top-[100px] z-10 bg-white/90 backdrop-blur-md shadow-sm">
                 <div className="flex space-x-2 overflow-x-auto px-4 pb-2">
                     {menuData && Object.keys(t.categories).map(key => (
                         <button key={key} onClick={() => setActiveCategory(key)} className={`py-2 px-4 text-sm sm:text-base font-semibold whitespace-nowrap transition-colors duration-200 rounded-full ${activeCategory === key ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{t.categories[key] || key}</button>
@@ -318,7 +318,7 @@ export default function App() {
             </nav>
             <main className="p-4 max-w-2xl mx-auto">
                 {Object.keys(filteredMenu).length > 0 ? Object.keys(filteredMenu).map(categoryKey => (
-                    <section key={categoryKey} className="mb-8 scroll-mt-24">
+                    <section key={categoryKey} className="mb-8 scroll-mt-28">
                     <h2 className="text-2xl font-bold text-gray-800 mb-4 pt-4">{t.categories[categoryKey] || categoryKey}</h2>
                     <div className="space-y-4">
                         {(filteredMenu[categoryKey] || []).map(item => (
@@ -338,7 +338,7 @@ export default function App() {
     <div className="bg-gray-100 min-h-screen font-sans">
       {showAnnouncement && fetchStatus === 'success' && <AnnouncementModal t={t} onClose={() => setShowAnnouncement(false)} />}
       {showConfirmModal && <ConfirmModal t={t} onConfirm={handleSubmitOrder} onCancel={() => setShowConfirmModal(false)} />}
-      <header className="sticky top-0 z-20 bg-white bg-opacity-80 backdrop-blur-md shadow-sm p-4 flex justify-between items-center h-[92px]">
+      <header className="sticky top-0 z-20 bg-white bg-opacity-80 backdrop-blur-md shadow-sm p-4 flex justify-between items-center h-[100px]">
         <div className="flex-1 flex justify-start">
             <div className="flex flex-col items-start gap-2">
                 <LanguageSwitcher lang={lang} setLang={setLang} />
@@ -371,6 +371,7 @@ export default function App() {
     </div>
   );
 }
+
 
 // --- 子組件 ---
 const AnnouncementModal = ({ t, onClose }) => {
