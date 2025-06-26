@@ -4,7 +4,7 @@ import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users, Arr
 // Vite 專案的標準作法，用於讀取環境變數
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
-// --- i18n 多國語言資料 (已補全所有語言翻譯) ---
+// --- i18n 多國語言資料 ---
 const translations = {
   zh: {
     language: "繁體中文",
@@ -180,9 +180,12 @@ const translations = {
   },
 };
 
+// 【新增】定義分類的固定順序
+const CATEGORY_ORDER = ['all', 'limited', 'main', 'side', 'drink', 'dessert'];
 
 // --- 主應用程式組件 ---
 export default function App() {
+  // --- States ---
   const [lang, setLang] = useState('zh');
   const [cart, setCart] = useState([]);
   const [menuData, setMenuData] = useState(null);
@@ -190,12 +193,16 @@ export default function App() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAiEnabled, setIsAiEnabled] = useState(false);
-  const [headcount, setHeadcount] = useState(1); // 【恢復人數狀態】
+  const [headcount, setHeadcount] = useState(1);
   const [activeCategory, setActiveCategory] = useState('all');
   const [showAnnouncement, setShowAnnouncement] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
+  // 【新增】設定是否使用 Logo，false 為顯示文字，true 為顯示圖片
+  const [useLogo, setUseLogo] = useState(false);
+
+  // --- Memos & Effects ---
   const t = useMemo(() => translations[lang] || translations.zh, [lang]);
 
   useEffect(() => {
@@ -206,26 +213,35 @@ export default function App() {
           fetch(`${API_URL}/api/menu`),
           fetch(`${API_URL}/api/settings`)
         ]);
-        if (!menuRes.ok || !settingsRes.ok) {
-            throw new Error('Network response was not ok');
-        }
+        if (!menuRes.ok || !settingsRes.ok) throw new Error('Network response was not ok');
         const menu = await menuRes.json();
         const settings = await settingsRes.json();
         setMenuData(menu);
         setIsAiEnabled(settings.isAiEnabled);
         setFetchStatus('success');
         if (retryCount === 0) {
-            setShowAnnouncement(true);
+            setShowAnnouncement(true); // 首次載入成功時顯示公告
         }
       } catch (error) {
         console.error("無法從後端獲取資料:", error);
         setFetchStatus('error');
       }
     };
-    
     fetchData();
   }, [retryCount]);
 
+  const totalAmount = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
+  const totalItems = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
+  
+  const filteredMenu = useMemo(() => {
+    if (!menuData) return null;
+    if (activeCategory === 'all') return menuData;
+    const result = {};
+    if (menuData[activeCategory]) result[activeCategory] = menuData[activeCategory];
+    return result;
+  }, [menuData, activeCategory]);
+
+  // --- Handlers ---
   const handleAddToCart = (item, options, notes, quantity) => {
     const optionsKey = JSON.stringify(Object.keys(options).sort().map(key => `${key}:${options[key]}`));
     const notesKey = notes || '';
@@ -242,21 +258,17 @@ export default function App() {
     setSelectedItem(null);
   };
   
-  const updateCartItemQuantity = (cartId, delta) => {
-    setCart(cart => cart.map(item => item.cartId === cartId ? { ...item, quantity: Math.max(0, item.quantity + delta) } : item).filter(item => item.quantity > 0));
-  };
-  
-  const removeFromCart = (cartId) => {
-    setCart(cart => cart.filter(item => item.cartId !== cartId));
-  };
-  
+  const updateCartItemQuantity = (cartId, delta) => setCart(cart.map(item => item.cartId === cartId ? { ...item, quantity: Math.max(0, item.quantity + delta) } : item).filter(item => item.quantity > 0));
+  const removeFromCart = (cartId) => setCart(cart => cart.filter(item => item.cartId !== cartId));
+  const handleRetry = () => setRetryCount(c => c + 1);
+
   const handleSubmitOrder = async () => {
     setShowConfirmModal(false);
     if (cart.length === 0) return;
     const orderData = {
       tableNumber: "A1",
-      headcount: headcount, // 【確保使用 state 中的 headcount】
-      totalAmount: totalAmount,
+      headcount,
+      totalAmount,
       items: cart.map(item => ({ id: item.id, name: item.name, quantity: item.quantity, notes: item.notes || "", selectedOptions: item.selectedOptions }))
     };
     try {
@@ -266,7 +278,7 @@ export default function App() {
         body: JSON.stringify(orderData),
       });
       if (!response.ok) throw new Error('伺服器回應錯誤');
-      const result = await response.json();
+      await response.json();
       alert(t.orderSuccess);
       setCart([]);
       setIsCartOpen(false);
@@ -276,57 +288,41 @@ export default function App() {
     }
   };
 
-  const totalAmount = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
-  const totalItems = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
-  
-  const filteredMenu = useMemo(() => {
-    if (!menuData) return null;
-    // 確保 menuData 存在，並且不是空物件
-    if (Object.keys(menuData).length === 0) return {};
-    if (activeCategory === 'all') return menuData;
-    const result = {};
-    if (menuData[activeCategory]) {
-        result[activeCategory] = menuData[activeCategory];
-    }
-    return result;
-  }, [menuData, activeCategory]);
-
-  const handleRetry = () => {
-    setRetryCount(c => c + 1);
-  };
-  
+  // --- Render Logic ---
   const renderMainContent = () => {
-    if (fetchStatus === 'loading') {
-      return <MenuSkeleton t={t} />;
-    }
-    if (fetchStatus === 'error') {
-      return <LoadError t={t} onRetry={handleRetry} />;
-    }
+    if (fetchStatus === 'loading') return <MenuSkeleton t={t} />;
+    if (fetchStatus === 'error') return <LoadError t={t} onRetry={handleRetry} />;
     if (fetchStatus === 'success' && filteredMenu) {
+      // 【修改】根據固定順序來決定渲染的分類鍵
+      const orderedCategoryKeys = activeCategory === 'all'
+        ? CATEGORY_ORDER.filter(key => key !== 'all' && filteredMenu[key]?.length > 0)
+        : [activeCategory];
+
       return (
-        <React.Fragment>
-            <nav className="sticky top-[100px] z-10 bg-white/90 backdrop-blur-md shadow-sm">
-                {/* 【修改這裡】增加垂直高度 */}
-                <div className="flex space-x-2 overflow-x-auto px-4 py-3">
-                    {menuData && Object.keys(t.categories).map(key => (
-                         // 如果菜單數據中沒有這個分類，就不渲染按鈕
-                        menuData[key] && <button key={key} onClick={() => setActiveCategory(key)} className={`py-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors duration-200 rounded-full ${activeCategory === key ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{t.categories[key] || key}</button>
-                    ))}
+        <>
+          <nav className="sticky top-[100px] z-10 bg-white/90 backdrop-blur-md shadow-sm">
+            <div className="flex space-x-2 overflow-x-auto px-4 py-3">
+              {/* 【修改】使用固定順序來渲染分類按鈕 */}
+              {CATEGORY_ORDER.map(key => (
+                menuData?.[key] && (
+                  <button key={key} onClick={() => setActiveCategory(key)} className={`py-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors duration-200 rounded-full ${activeCategory === key ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{t.categories[key] || key}</button>
+                )
+              ))}
+            </div>
+          </nav>
+          <main className="p-4 max-w-2xl mx-auto">
+            {orderedCategoryKeys.length > 0 ? orderedCategoryKeys.map(categoryKey => (
+              <section key={categoryKey} className="mb-8 scroll-mt-28">
+                <h2 className="text-2xl font-bold text-gray-800 mb-4 pt-4">{t.categories[categoryKey] || categoryKey}</h2>
+                <div className="space-y-4">
+                  {(filteredMenu[categoryKey] || []).map(item => (
+                    <MenuItem key={item.id} item={item} lang={lang} t={t} onClick={() => setSelectedItem(item)} />
+                  ))}
                 </div>
-            </nav>
-            <main className="p-4 max-w-2xl mx-auto">
-                {Object.keys(filteredMenu).length > 0 ? Object.keys(filteredMenu).map(categoryKey => (
-                    <section key={categoryKey} className="mb-8 scroll-mt-28">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-4 pt-4">{t.categories[categoryKey] || categoryKey}</h2>
-                    <div className="space-y-4">
-                        {(filteredMenu[categoryKey] || []).map(item => (
-                        <MenuItem key={item.id} item={item} lang={lang} t={t} onClick={() => setSelectedItem(item)} />
-                        ))}
-                    </div>
-                    </section>
-                )) : <div className="text-center py-10 text-gray-500">{t.noItemsInCategory}</div>}
-            </main>
-        </React.Fragment>
+              </section>
+            )) : <div className="text-center py-10 text-gray-500">{t.noItemsInCategory}</div>}
+          </main>
+        </>
       );
     }
     return null;
@@ -334,20 +330,28 @@ export default function App() {
   
   return (
     <div className="bg-gray-100 min-h-screen font-sans">
+      {/* Modals */}
       {showAnnouncement && fetchStatus === 'success' && <AnnouncementModal t={t} onClose={() => setShowAnnouncement(false)} />}
       {showConfirmModal && <ConfirmModal t={t} onConfirm={handleSubmitOrder} onCancel={() => setShowConfirmModal(false)} />}
+      
+      {/* Header */}
       <header className="sticky top-0 z-20 bg-white bg-opacity-80 backdrop-blur-md shadow-sm p-4 flex justify-between items-center h-[100px]">
-        {/* 【修改這裡】加入 HeadcountSelector 並調整排版 */}
-        <div className="flex-1 flex justify-start items-center gap-4">
+        {/* 【修改】左側改為垂直排列 */}
+        <div className="flex-1 flex flex-col items-start justify-center gap-2">
             <LanguageSwitcher lang={lang} setLang={setLang} />
-            <HeadcountSelector headcount={headcount} setHeadcount={setHeadcount} t={t} lang={lang} />
+            <HeadcountSelector headcount={headcount} setHeadcount={setHeadcount} lang={lang} />
         </div>
         <div className="absolute left-1/2 -translate-x-1/2 text-center">
-            <div className="font-bold text-xl text-gray-800">{t.menu}</div>
+            {/* 【修改】增加 Logo 或文字的選項 */}
+            {useLogo ? (
+                <img src="https://i.imgur.com/your-logo.png" alt="Restaurant Logo" className="h-12 mx-auto" />
+            ) : (
+                <div className="font-bold text-xl text-gray-800">{t.menu}</div>
+            )}
             <div className="text-sm text-gray-500 mt-1">{t.table}: A1</div>
         </div>
         <div className="flex-1 flex justify-end">
-             <div className="text-right text-gray-800 font-bold text-lg" onClick={() => setIsCartOpen(true)}>
+             <div className="text-right text-gray-800 font-bold text-lg cursor-pointer" onClick={() => setIsCartOpen(true)}>
                 ${totalAmount}
              </div>
         </div>
@@ -355,6 +359,7 @@ export default function App() {
       
       {renderMainContent()}
       
+      {/* Floating Cart Button */}
       {cart.length > 0 && (
          <div className="fixed bottom-6 right-6 z-30">
             <button onClick={() => setIsCartOpen(true)} className="bg-orange-500 text-white rounded-full shadow-lg flex items-center justify-center w-16 h-16 hover:bg-orange-600 transition-all duration-300 transform hover:scale-110">
@@ -363,13 +368,16 @@ export default function App() {
             </button>
         </div>
       )}
+
+      {/* Detail & Cart Modals */}
       {selectedItem && <ItemDetailModal item={selectedItem} t={t} lang={lang} onClose={() => setSelectedItem(null)} onAddToCart={handleAddToCart} />}
       {isCartOpen && <CartModal cart={cart} t={t} lang={lang} menuData={menuData} totalAmount={totalAmount} isAiEnabled={isAiEnabled} onClose={() => setIsCartOpen(false)} onUpdateQuantity={updateCartItemQuantity} onRemove={removeFromCart} onSubmitOrder={() => setShowConfirmModal(true)} />}
     </div>
   );
 }
 
-// --- 子組件 ---
+// --- 子組件 (Components) ---
+
 const AnnouncementModal = ({ t, onClose }) => {
     const announcements = t.announcements || [];
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -411,24 +419,21 @@ const AnnouncementModal = ({ t, onClose }) => {
     );
 };
 const ConfirmModal = ({ t, onConfirm, onCancel }) => ( <div className="fixed inset-0 bg-black bg-opacity-60 z-[70] flex justify-center items-center p-4"> <div className="bg-white w-full max-w-sm rounded-xl shadow-2xl p-6 animate-slide-up"> <h3 className="text-xl font-bold text-gray-800 mb-2">{t.confirmOrderTitle}</h3> <p className="text-gray-600 mb-6">{t.confirmOrderMsg}</p> <div className="flex gap-4"> <button onClick={onCancel} className="flex-1 bg-gray-200 text-gray-800 font-bold py-3 rounded-lg hover:bg-gray-300 transition-colors">{t.cancel}</button> <button onClick={onConfirm} className="flex-1 bg-green-500 text-white font-bold py-3 rounded-lg hover:bg-green-600 transition-colors">{t.confirm}</button> </div> </div> </div> );
-const LanguageSwitcher = ({ lang, setLang }) => ( <div className="relative"> <select value={lang} onChange={(e) => setLang(e.target.value)} className="appearance-none bg-white bg-opacity-80 backdrop-blur-sm text-gray-800 font-semibold py-2 px-4 pr-8 rounded-full shadow-md focus:outline-none"> {Object.keys(translations).map(key => (<option key={key} value={key}>{translations[key].language}</option>))} </select> <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700"><ChevronDown size={20} /></div> </div> );
+const LanguageSwitcher = ({ lang, setLang }) => ( <div className="relative"> <select value={lang} onChange={(e) => setLang(e.target.value)} className="appearance-none bg-white bg-opacity-80 backdrop-blur-sm text-gray-800 font-semibold py-1 px-3 pr-8 rounded-full shadow-sm focus:outline-none text-sm"> {Object.keys(translations).map(key => (<option key={key} value={key}>{translations[key].language}</option>))} </select> <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700"><ChevronDown size={16} /></div> </div> );
 
-// 【修改後的 HeadcountSelector 元件】
 const HeadcountSelector = ({ headcount, setHeadcount, lang }) => {
-    // 根據語言顯示不同單位
     const getUnitText = (num) => {
         if (lang === 'zh' || lang === 'ja') return '人';
         if (lang === 'ko') return '명';
         return num > 1 ? 'guests' : 'guest';
     };
-
     return (
         <div className="relative flex items-center">
-            <Users size={20} className="text-gray-600 absolute left-3 z-10 pointer-events-none" />
+            <Users size={16} className="text-gray-600 absolute left-2.5 z-10 pointer-events-none" />
             <select
                 value={headcount}
                 onChange={e => setHeadcount(parseInt(e.target.value, 10))}
-                className="appearance-none bg-white bg-opacity-80 backdrop-blur-sm text-gray-800 font-semibold py-2 pl-10 pr-4 rounded-full shadow-md focus:outline-none"
+                className="appearance-none bg-white bg-opacity-80 backdrop-blur-sm text-gray-800 font-semibold py-1 pl-8 pr-3 rounded-full shadow-sm focus:outline-none text-sm"
             >
                 {Array.from({ length: 10 }, (_, i) => i + 1).map(num => (
                     <option key={num} value={num}>
