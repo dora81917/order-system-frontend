@@ -190,7 +190,7 @@ export default function App() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAiEnabled, setIsAiEnabled] = useState(false);
-  const [headcount, setHeadcount] = useState(1);
+  const [headcount, setHeadcount] = useState(1); // 【恢復人數狀態】
   const [activeCategory, setActiveCategory] = useState('all');
   const [showAnnouncement, setShowAnnouncement] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -255,7 +255,7 @@ export default function App() {
     if (cart.length === 0) return;
     const orderData = {
       tableNumber: "A1",
-      headcount: headcount,
+      headcount: headcount, // 【確保使用 state 中的 headcount】
       totalAmount: totalAmount,
       items: cart.map(item => ({ id: item.id, name: item.name, quantity: item.quantity, notes: item.notes || "", selectedOptions: item.selectedOptions }))
     };
@@ -281,6 +281,8 @@ export default function App() {
   
   const filteredMenu = useMemo(() => {
     if (!menuData) return null;
+    // 確保 menuData 存在，並且不是空物件
+    if (Object.keys(menuData).length === 0) return {};
     if (activeCategory === 'all') return menuData;
     const result = {};
     if (menuData[activeCategory]) {
@@ -304,9 +306,11 @@ export default function App() {
       return (
         <React.Fragment>
             <nav className="sticky top-[100px] z-10 bg-white/90 backdrop-blur-md shadow-sm">
-                <div className="flex space-x-2 overflow-x-auto px-4 pb-2">
+                {/* 【修改這裡】增加垂直高度 */}
+                <div className="flex space-x-2 overflow-x-auto px-4 py-3">
                     {menuData && Object.keys(t.categories).map(key => (
-                        <button key={key} onClick={() => setActiveCategory(key)} className={`py-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors duration-200 rounded-full ${activeCategory === key ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{t.categories[key] || key}</button>
+                         // 如果菜單數據中沒有這個分類，就不渲染按鈕
+                        menuData[key] && <button key={key} onClick={() => setActiveCategory(key)} className={`py-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors duration-200 rounded-full ${activeCategory === key ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{t.categories[key] || key}</button>
                     ))}
                 </div>
             </nav>
@@ -333,13 +337,12 @@ export default function App() {
       {showAnnouncement && fetchStatus === 'success' && <AnnouncementModal t={t} onClose={() => setShowAnnouncement(false)} />}
       {showConfirmModal && <ConfirmModal t={t} onConfirm={handleSubmitOrder} onCancel={() => setShowConfirmModal(false)} />}
       <header className="sticky top-0 z-20 bg-white bg-opacity-80 backdrop-blur-md shadow-sm p-4 flex justify-between items-center h-[100px]">
-        <div className="flex-1 flex justify-start">
+        {/* 【修改這裡】加入 HeadcountSelector 並調整排版 */}
+        <div className="flex-1 flex justify-start items-center gap-4">
             <LanguageSwitcher lang={lang} setLang={setLang} />
+            <HeadcountSelector headcount={headcount} setHeadcount={setHeadcount} t={t} lang={lang} />
         </div>
         <div className="absolute left-1/2 -translate-x-1/2 text-center">
-            {/* 方案一：顯示 LOGO */}
-            {/* <img src="your-logo-url.png" alt="Restaurant Logo" className="h-12 mx-auto" /> */}
-            {/* 方案二：顯示純文字 */}
             <div className="font-bold text-xl text-gray-800">{t.menu}</div>
             <div className="text-sm text-gray-500 mt-1">{t.table}: A1</div>
         </div>
@@ -409,7 +412,34 @@ const AnnouncementModal = ({ t, onClose }) => {
 };
 const ConfirmModal = ({ t, onConfirm, onCancel }) => ( <div className="fixed inset-0 bg-black bg-opacity-60 z-[70] flex justify-center items-center p-4"> <div className="bg-white w-full max-w-sm rounded-xl shadow-2xl p-6 animate-slide-up"> <h3 className="text-xl font-bold text-gray-800 mb-2">{t.confirmOrderTitle}</h3> <p className="text-gray-600 mb-6">{t.confirmOrderMsg}</p> <div className="flex gap-4"> <button onClick={onCancel} className="flex-1 bg-gray-200 text-gray-800 font-bold py-3 rounded-lg hover:bg-gray-300 transition-colors">{t.cancel}</button> <button onClick={onConfirm} className="flex-1 bg-green-500 text-white font-bold py-3 rounded-lg hover:bg-green-600 transition-colors">{t.confirm}</button> </div> </div> </div> );
 const LanguageSwitcher = ({ lang, setLang }) => ( <div className="relative"> <select value={lang} onChange={(e) => setLang(e.target.value)} className="appearance-none bg-white bg-opacity-80 backdrop-blur-sm text-gray-800 font-semibold py-2 px-4 pr-8 rounded-full shadow-md focus:outline-none"> {Object.keys(translations).map(key => (<option key={key} value={key}>{translations[key].language}</option>))} </select> <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700"><ChevronDown size={20} /></div> </div> );
-const HeadcountSelector = ({ headcount, setHeadcount, t }) => ( <div className="flex items-center space-x-2"> <Users size={20} className="text-gray-600" /> <select value={headcount} onChange={e => setHeadcount(parseInt(e.target.value, 10))} className="appearance-none bg-white bg-opacity-80 backdrop-blur-sm text-gray-800 font-semibold py-2 pl-3 pr-8 rounded-full shadow-md focus:outline-none"> {Array.from({ length: 10 }, (_, i) => i + 1).map(num => ( <option key={num} value={num}>{num} {t.headcount.includes("人") ? "人" : ""}</option> ))} </select> </div> );
+
+// 【修改後的 HeadcountSelector 元件】
+const HeadcountSelector = ({ headcount, setHeadcount, lang }) => {
+    // 根據語言顯示不同單位
+    const getUnitText = (num) => {
+        if (lang === 'zh' || lang === 'ja') return '人';
+        if (lang === 'ko') return '명';
+        return num > 1 ? 'guests' : 'guest';
+    };
+
+    return (
+        <div className="relative flex items-center">
+            <Users size={20} className="text-gray-600 absolute left-3 z-10 pointer-events-none" />
+            <select
+                value={headcount}
+                onChange={e => setHeadcount(parseInt(e.target.value, 10))}
+                className="appearance-none bg-white bg-opacity-80 backdrop-blur-sm text-gray-800 font-semibold py-2 pl-10 pr-4 rounded-full shadow-md focus:outline-none"
+            >
+                {Array.from({ length: 10 }, (_, i) => i + 1).map(num => (
+                    <option key={num} value={num}>
+                        {num} {getUnitText(num)}
+                    </option>
+                ))}
+            </select>
+        </div>
+    );
+};
+
 const MenuItem = ({ item, lang, onClick }) => ( <div className="bg-white rounded-xl shadow-md overflow-hidden flex cursor-pointer hover:shadow-lg transition-shadow duration-300" onClick={onClick}> <div className="flex-1 p-4"> <h3 className="font-bold text-lg text-gray-900">{item.name?.[lang] || item.name?.zh}</h3> <p className="text-gray-600 text-sm mt-1">{item.description?.[lang] || item.description?.zh}</p> <p className="font-semibold text-orange-500 mt-2">${item.price}</p> </div> <img src={item.image} alt={item.name?.[lang] || item.name?.zh} className="w-32 h-32 object-cover"/> </div> );
 const MenuSkeleton = ({ t }) => ( <div className="space-y-8 animate-pulse pt-4"> <div className="text-center text-gray-500 font-semibold">{t.loadingMenu}</div> {[...Array(3)].map((_, i) => ( <div key={i}> <div className="h-8 w-1/3 bg-gray-300 rounded-lg mb-4"></div> <div className="space-y-4"> {[...Array(2)].map((_, j) => ( <div key={j} className="bg-white rounded-xl shadow-md overflow-hidden flex"> <div className="flex-1 p-4"> <div className="h-6 w-3/4 bg-gray-300 rounded"></div> <div className="h-4 w-full bg-gray-200 rounded mt-2"></div> <div className="h-4 w-2/3 bg-gray-200 rounded mt-1"></div> <div className="h-5 w-1/4 bg-gray-300 rounded mt-2"></div> </div> <div className="w-32 h-32 bg-gray-300"></div> </div> ))} </div> </div> ))} </div> );
 const LoadError = ({ t, onRetry }) => ( <div className="text-center py-20"> <WifiOff className="mx-auto h-16 w-16 text-red-400" /> <h3 className="mt-4 text-xl font-semibold text-gray-800">載入失敗</h3> <p className="mt-2 text-gray-500">{t.loadMenuError}</p> <button onClick={onRetry} className="mt-6 inline-flex items-center gap-2 bg-orange-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-orange-600 transition-colors"> <RefreshCw size={18} /> {t.retry} </button> </div> );
@@ -439,4 +469,3 @@ const CartModal = ({ cart, t, lang, menuData, totalAmount, isAiEnabled, onClose,
     const handleGetRecommendation = async () => { setIsRecommending(true); setRecommendation(''); const cartItemNames = cart.map(item => item.name?.[lang] || item.name.zh).join(', '); const menuItems = menuData ? Object.values(menuData).flat() : []; const availableMenuItems = menuItems.filter(menuItem => !cart.find(cartItem => cartItem.id === menuItem.id)).map(item => item.name?.[lang] || item.name.zh).join(', '); const recommendationRequest = { language: translations[lang]?.language || "English", cartItems: cartItemNames, availableItems: availableMenuItems, }; try { const response = await fetch(`${API_URL}/api/recommendation`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(recommendationRequest) }); if (!response.ok) { throw new Error(`API call failed with status: ${response.status}`); } const result = await response.json(); if (result.recommendation) { setRecommendation(result.recommendation); } else { throw new Error("AI response was empty or malformed."); } } catch (error) { setRecommendation(t.orderFail); console.error('Error fetching recommendation:', error); } finally { setIsRecommending(false); } };
     return ( <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end" onClick={onClose}> <div className="bg-gray-50 w-full max-w-md h-full flex flex-col shadow-2xl animate-slide-in-right" onClick={e => e.stopPropagation()}> <header className="p-4 border-b flex justify-between items-center"> <h2 className="text-xl font-bold text-gray-800">{t.cart}</h2> <button onClick={onClose} className="flex items-center gap-2 text-orange-600 font-semibold hover:text-orange-700"><ArrowLeft size={18} />{t.continueOrdering}</button> </header> <main className="flex-1 overflow-y-auto p-4 space-y-4"> {cart.map(item => ( <div key={item.cartId} className="bg-white p-3 rounded-lg shadow-sm flex items-start space-x-3"> <img src={item.image} alt={item.name?.[lang] || item.name?.zh} className="w-20 h-20 object-cover rounded-md flex-shrink-0" /> <div className="flex-1"> <p className="font-bold text-gray-800">{item.name?.[lang] || item.name?.zh}</p> <div className="text-xs text-gray-500 mt-1">{item.selectedOptions && Object.values(item.selectedOptions).map(optKey => { const optionGroupKey = Object.keys(t.options).find(groupKey => t.options[groupKey][optKey]); return t.options[optionGroupKey]?.[optKey] || optKey; }).join(', ')}</div> {item.notes && <p className="text-xs text-orange-600 mt-1 italic">"{item.notes}"</p>} <p className="font-semibold text-gray-700 mt-1">${item.price}</p> </div> <div className="flex flex-col items-end justify-between h-full"> <button onClick={() => onRemove(item.cartId)} className="p-1 text-gray-400 hover:text-red-500"><Trash2 size={18} /></button> <div className="flex items-center bg-gray-100 rounded-full"> <button onClick={() => onUpdateQuantity(item.cartId, -1)} className="p-2.5 text-gray-600 hover:bg-gray-200 rounded-full transition-colors"><Minus size={20} /></button> <span className="px-3 text-lg font-bold w-10 text-center">{item.quantity}</span> <button onClick={() => onUpdateQuantity(item.cartId, 1)} className="p-2.5 text-gray-600 hover:bg-gray-200 rounded-full transition-colors"><Plus size={20} /></button> </div> </div> </div>))} {isAiEnabled && ( <div className="pt-4"><button onClick={handleGetRecommendation} disabled={isRecommending} className="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center disabled:bg-blue-300 disabled:cursor-wait"><Sparkles size={18} className="mr-2" />{t.getRecommendation}</button></div>)} {(isRecommending || recommendation) && ( <div className="mt-4 p-3 bg-orange-50 rounded-lg border border-orange-200"> <div className="flex items-center mb-2"><Sparkles className="text-orange-500 mr-2" size={20} /><h4 className="font-semibold text-orange-700">{t.aiRecommendation}</h4></div> {isRecommending ? (<p className="text-sm text-gray-600 animate-pulse">{t.aiThinking}</p>) : (<p className="text-sm text-gray-700 whitespace-pre-wrap">{recommendation}</p>)} </div>)} </main> <footer className="p-4 bg-white border-t"> <div className="flex justify-between items-center mb-4"><span className="text-lg font-semibold text-gray-800">{t.total}</span><span className="text-2xl font-bold text-orange-500">${totalAmount}</span></div> <button onClick={onSubmitOrder} disabled={cart.length === 0} className="w-full bg-green-500 text-white text-lg font-bold py-3 rounded-lg hover:bg-green-600 transition-colors duration-300 disabled:bg-gray-300 disabled:cursor-not-allowed">{t.submitOrder}</button> </footer> </div> </div> );
 };
-
