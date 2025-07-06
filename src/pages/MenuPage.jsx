@@ -4,25 +4,24 @@ import { ChevronDown, ShoppingCart, X, Plus, Minus, Trash2, Sparkles, Users, Arr
 // API 的基本 URL
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
-// 多國語言資料
+// 【修正】恢復中、英、日、韓四國語言資料
 const translations = {
   zh: {
-    language: "繁體中文", menu: "菜單", categories: { all: "全部", limited: "主廚推薦", main: "經典主食", side: "美味附餐", drink: "清涼飲品", dessert: "飯後甜點" }, announcement: "最新消息", 
-    // 【注意】公告內容現在由後台的「店面設定」動態載入，此處的資料僅作為備用。
-    announcements: [], 
-    close: "關閉", itemDetails: "餐點詳情", addToCart: "加入購物車", total: "總計", cart: "您的訂單", emptyCart: "您的購物車是空的", notes: "備註", notesPlaceholder: "有什麼特別需求嗎？", table: "桌號", headcount: "用餐人數", quantity: "數量", continueOrdering: "繼續點餐", submitOrder: "送出訂單", confirmOrderTitle: "確認送出訂單？", confirmOrderMsg: "訂單送出後將無法修改，請確認您的餐點。", cancel: "取消", confirm: "確認送出", orderSuccess: "下單成功！", orderFail: "下單失敗，請稍後再試。", loadingMenu: "正在喚醒伺服器，請稍候...", loadMenuError: "無法載入菜單，請檢查您的網路連線或稍後再試。", retry: "重試", noItemsInCategory: "此分類目前沒有商品", getRecommendation: "✨ 讓AI推薦加點菜", aiRecommendation: "AI 智慧推薦", aiThinking: "AI小助手正在為您思考...", options: { spice: { name: "辣度", none: "不辣", mild: "小辣", medium: "中辣", hot: "大辣" }, sugar: { name: "甜度", full: "正常糖", less: "少糖", half: "半糖", quarter: "微糖", none: "無糖" }, ice: { name: "冰塊", regular: "正常冰", less: "少冰", none: "去冰" }, size: { name: "份量", small: "小份", large: "大份" }, },
+    language: "繁體中文", menu: "菜單", categories: { all: "全部", limited: "主廚推薦", main: "經典主食", side: "美味附餐", drink: "清涼飲品", dessert: "飯後甜點" }, announcement: "最新消息", announcements: [], close: "關閉", itemDetails: "餐點詳情", addToCart: "加入購物車", total: "總計", cart: "您的訂單", emptyCart: "您的購物車是空的", notes: "備註", notesPlaceholder: "有什麼特別需求嗎？", table: "桌號", headcount: "用餐人數", quantity: "數量", continueOrdering: "繼續點餐", submitOrder: "送出訂單", confirmOrderTitle: "確認送出訂單？", confirmOrderMsg: "訂單送出後將無法修改，請確認您的餐點。", cancel: "取消", confirm: "確認送出", orderSuccess: "下單成功！", orderFail: "下單失敗，請稍後再試。", loadingMenu: "正在喚醒伺服器，請稍候...", loadMenuError: "無法載入菜單，請檢查您的網路連線或稍後再試。", retry: "重試", noItemsInCategory: "此分類目前沒有商品", getRecommendation: "✨ 讓AI推薦加點菜", aiRecommendation: "AI 智慧推薦", aiThinking: "AI小助手正在為您思考...", options: { spice: { name: "辣度", none: "不辣", mild: "小辣", medium: "中辣", hot: "大辣" }, sugar: { name: "甜度", full: "正常糖", less: "少糖", half: "半糖", quarter: "微糖", none: "無糖" }, ice: { name: "冰塊", regular: "正常冰", less: "少冰", none: "去冰" }, size: { name: "份量", small: "小份", large: "大份" }, },
   },
   en: {
-    language: "English", menu: "Menu", categories: { all: "All", limited: "Chef's Special", main: "Main Course", side: "Side Dish", drink: "Drinks", dessert: "Desserts" }, announcement: "Latest News", 
-    announcements: [], 
-    close: "Close", itemDetails: "Item Details", addToCart: "Add to Cart", total: "Total", cart: "Your Order", emptyCart: "Your cart is empty", notes: "Notes", notesPlaceholder: "Any special requests?", table: "Table", headcount: "Guests", quantity: "Quantity", continueOrdering: "Continue Ordering", submitOrder: "Submit Order", confirmOrderTitle: "Confirm your order?", confirmOrderMsg: "Once submitted, the order cannot be changed. Please confirm your items.", cancel: "Cancel", confirm: "Confirm & Submit", orderSuccess: "Order placed successfully!", orderFail: "Order failed, please try again later.", loadingMenu: "Waking up the server, please wait...", loadMenuError: "Could not load menu. Please check your connection or try again later.", retry: "Retry", noItemsInCategory: "No items in this category.", getRecommendation: "✨ Get AI Recommendations", aiRecommendation: "AI Smart Recommendation", aiThinking: "AI assistant is thinking for you...", options: { spice: { name: "Spice Level", none: "Not Spicy", mild: "Mild", medium: "Medium", hot: "Hot" }, sugar: { name: "Sugar Level", full: "Normal", less: "Less Sugar", half: "Half Sugar", quarter: "Quarter Sugar", none: "Sugar-Free" }, ice: { name: "Ice Level", regular: "Regular Ice", less: "Less Ice", none: "No Ice" }, size: { name: "Size", small: "Small", large: "Large" }, },
+    language: "English", menu: "Menu", categories: { all: "All", limited: "Chef's Special", main: "Main Course", side: "Side Dish", drink: "Drinks", dessert: "Desserts" }, announcement: "Latest News", announcements: [], close: "Close", itemDetails: "Item Details", addToCart: "Add to Cart", total: "Total", cart: "Your Order", emptyCart: "Your cart is empty", notes: "Notes", notesPlaceholder: "Any special requests?", table: "Table", headcount: "Guests", quantity: "Quantity", continueOrdering: "Continue Ordering", submitOrder: "Submit Order", confirmOrderTitle: "Confirm your order?", confirmOrderMsg: "Once submitted, the order cannot be changed. Please confirm your items.", cancel: "Cancel", confirm: "Confirm & Submit", orderSuccess: "Order placed successfully!", orderFail: "Order failed, please try again later.", loadingMenu: "Waking up the server, please wait...", loadMenuError: "Could not load menu. Please check your connection or try again later.", retry: "Retry", noItemsInCategory: "No items in this category.", getRecommendation: "✨ Get AI Recommendations", aiRecommendation: "AI Smart Recommendation", aiThinking: "AI assistant is thinking for you...", options: { spice: { name: "Spice Level", none: "Not Spicy", mild: "Mild", medium: "Medium", hot: "Hot" }, sugar: { name: "Sugar Level", full: "Normal", less: "Less Sugar", half: "Half Sugar", quarter: "Quarter Sugar", none: "Sugar-Free" }, ice: { name: "Ice Level", regular: "Regular Ice", less: "Less Ice", none: "No Ice" }, size: { name: "Size", small: "Small", large: "Large" }, },
+  },
+  ja: {
+    language: "日本語", menu: "メニュー", categories: { all: "すべて", limited: "シェフのおすすめ", main: "メイン", side: "サイド", drink: "ドリンク", dessert: "デザート" }, announcement: "お知らせ", announcements: [], close: "閉じる", itemDetails: "商品の詳細", addToCart: "カートに追加", total: "合計", cart: "ご注文", emptyCart: "カートは空です", notes: "備考", notesPlaceholder: "特別なご要望はありますか？", table: "テーブル", headcount: "人数", quantity: "数量", continueOrdering: "注文を続ける", submitOrder: "注文を送信", confirmOrderTitle: "注文を確定しますか？", confirmOrderMsg: "送信後の変更はできません。ご注文内容をご確認ください。", cancel: "キャンセル", confirm: "確定する", orderSuccess: "注文に成功しました！", orderFail: "注文に失敗しました。後でもう一度お試しください。", loadingMenu: "サーバーを起動しています、少々お待ちください...", loadMenuError: "メニューを読み込めませんでした。接続を確認するか、後でもう一度お試しください。", retry: "再試行", noItemsInCategory: "このカテゴリには現在商品がありません", getRecommendation: "✨ AIにおすすめを聞く", aiRecommendation: "AIスマート推薦", aiThinking: "AIアシスタントが考えています...", options: { spice: { name: "辛さ", none: "辛くない", mild: "ピリ辛", medium: "中辛", hot: "激辛" }, sugar: { name: "甘さ", full: "通常", less: "甘さ控えめ", half: "甘さ半分", quarter: "甘さ微糖", none: "無糖" }, ice: { name: "氷", regular: "通常", less: "少なめ", none: "氷なし" }, size: { name: "サイズ", small: "小", large: "大" }, },
+  },
+  ko: {
+    language: "한국어", menu: "메뉴", categories: { all: "전체", limited: "셰프 추천", main: "메인 요리", side: "사이드", drink: "음료", dessert: "디저트" }, announcement: "공지사항", announcements: [], close: "닫기", itemDetails: "상품 상세", addToCart: "카트에 추가", total: "총액", cart: "주문 내역", emptyCart: "장바구니가 비어 있습니다", notes: "메모", notesPlaceholder: "특별한 요청 있으신가요?", table: "테이블", headcount: "인원수", quantity: "수량", continueOrdering: "계속 주문하기", submitOrder: "주문 제출", confirmOrderTitle: "주문을 제출하시겠습니까?", confirmOrderMsg: "제출된 주문은 수정할 수 없습니다. 주문 내역을 확인해주세요.", cancel: "취소", confirm: "제출", orderSuccess: "주문이 완료되었습니다!", orderFail: "주문에 실패했습니다. 나중에 다시 시도해주세요.", loadingMenu: "서버를 깨우는 중입니다. 잠시만 기다려 주세요...", loadMenuError: "메뉴를 불러올 수 없습니다. 인터넷 연결을 확인하거나 나중에 다시 시도해주세요.", retry: "재시도", noItemsInCategory: "이 카테고리에는 현재 상품이 없습니다", getRecommendation: "✨ AI에게 추천받기", aiRecommendation: "AI 스마트 추천", aiThinking: "AI 어시스턴트가 생각 중입니다...", options: { spice: { name: "맵기", none: "안 매운맛", mild: "순한 맛", medium: "중간 맛", hot: "매운맛" }, sugar: { name: "당도", full: "정상", less: "덜 달게", half: "중간", quarter: "약간 달게", none: "무설탕" }, ice: { name: "얼음", regular: "보통", less: "적게", none: "없이" }, size: { name: "사이즈", small: "소", large: "대" }, },
   },
 };
 
-// 分類的固定顯示順序
 const CATEGORY_ORDER = ['all', 'limited', 'main', 'side', 'drink', 'dessert'];
 
-// 主頁面元件
 export default function MenuPage() {
   const [lang, setLang] = useState('zh');
   const [cart, setCart] = useState([]);
@@ -30,7 +29,6 @@ export default function MenuPage() {
   const [fetchStatus, setFetchStatus] = useState('loading');
   const [selectedItem, setSelectedItem] = useState(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  // 【修正】初始化 settings 狀態，包含所有可能用到的欄位
   const [settings, setSettings] = useState({
     isAiEnabled: false,
     useLogo: false,
@@ -46,7 +44,6 @@ export default function MenuPage() {
 
   const t = useMemo(() => translations[lang] || translations.zh, [lang]);
 
-  // 載入菜單和所有設定
   useEffect(() => {
     setFetchStatus('loading');
     const fetchData = async () => {
@@ -59,7 +56,7 @@ export default function MenuPage() {
         const menu = await menuRes.json();
         const appSettings = await settingsRes.json();
         setMenuData(menu);
-        setSettings(appSettings); // 直接設定從後端來的完整設定
+        setSettings(appSettings);
         setFetchStatus('success');
         if (retryCount === 0 && appSettings.announcements?.length > 0) {
             setShowAnnouncement(true);
@@ -72,10 +69,10 @@ export default function MenuPage() {
     fetchData();
   }, [retryCount]);
 
-  // 計算金額
   const subTotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
   const transactionFee = useMemo(() => Math.round(subTotal * ((settings.transactionFeePercent || 0) / 100)), [subTotal, settings.transactionFeePercent]);
   const totalAmount = useMemo(() => subTotal + transactionFee, [subTotal, transactionFee]);
+  const totalItems = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
   
   const filteredMenu = useMemo(() => {
     if (!menuData) return null;
@@ -181,7 +178,6 @@ export default function MenuPage() {
         </div>
         <div className="absolute left-1/2 -translate-x-1/2 text-center">
             {settings.useLogo ? (
-                // 【提示】若要使用本地 Logo，請將圖片放入 public/images/ 資料夾，並將路徑改為例如 '/images/my-logo.png'
                 <img src={settings.logoUrl || '/images/default-logo.png'} alt="Restaurant Logo" className="h-12 mx-auto" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/150x50/orange/white?text=Logo'; }} />
             ) : (
                 <div className="font-bold text-xl text-gray-800">{t.menu}</div>
