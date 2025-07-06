@@ -255,7 +255,6 @@ const CartModal = ({ cart, t, lang, menuData, subTotal, transactionFee, totalAmo
     const [isRecommending, setIsRecommending] = useState(false);
     const [recommendation, setRecommendation] = useState('');
 
-    // 【修正】AI 推薦功能，加入超時機制
     const handleGetRecommendation = async () => {
         setIsRecommending(true);
         setRecommendation('');
@@ -273,9 +272,9 @@ const CartModal = ({ cart, t, lang, menuData, subTotal, transactionFee, totalAmo
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(recommendationRequest),
-                signal: controller.signal // 加入超時控制
+                signal: controller.signal
             });
-            clearTimeout(timeoutId); // 成功取得回應，清除超時
+            clearTimeout(timeoutId);
             if (!response.ok) throw new Error(`API call failed with status: ${response.status}`);
             const result = await response.json();
             if (result.recommendation) {
