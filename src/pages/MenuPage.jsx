@@ -504,17 +504,3 @@ const CartModal = ({ cart, t, lang, menuData, totalAmount, isAiEnabled, onClose,
         </div>
     );
 };
-```
-
-#### **步驟二：推送更新**
-
-完成檔案的完整替換後，請在 `frontend` 資料夾的終端機中，執行 git 指令。
-
-```bash
-# 確保你在 frontend 資料夾中
-git add .
-git commit -m "fix(MenuPage): resolve syntax error with complete file"
-git push
-```
-
-這次的程式碼是完整且經過驗證的，應該能夠順利通過 Vercel 的建置流程。我們離成功就差這一
