@@ -3,6 +3,18 @@ import { Book, Edit, Settings, LogOut, PlusCircle, Trash2, Save, XCircle, Loader
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
+// 【修正】新增一個迷你的 translations 物件，以供表單使用
+const translations = {
+  zh: {
+    options: {
+        spice: { name: "辣度" },
+        sugar: { name: "甜度" },
+        ice: { name: "冰塊" },
+        size: { name: "份量" },
+    },
+  },
+};
+
 const AdminPage = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [password, setPassword] = useState('');
@@ -134,11 +146,10 @@ const SettingsManagement = () => {
     const handleToggle = async (key) => {
         const tempSettings = { ...settings, [key]: !settings[key] };
 
-        // 防呆機制：確保至少有一種儲存方式
         if (key === 'saveToDatabase' || key === 'saveToGoogleSheet') {
             if (!tempSettings.saveToDatabase && !tempSettings.saveToGoogleSheet) {
                 setError('錯誤：必須至少啟用一種訂單儲存方式！');
-                setTimeout(() => setError(''), 3000); // 3秒後自動清除錯誤訊息
+                setTimeout(() => setError(''), 3000);
                 return;
             }
         }
@@ -247,7 +258,6 @@ const MenuItemForm = ({ item, onSave, onCancel }) => {
 
     useEffect(() => {
         setFormData(item);
-        // 初始化勾選框狀態
         const initialOptions = { spice: false, sugar: false, ice: false, size: false };
         if (item.options) {
             const optionsArray = item.options.split(',');
@@ -274,12 +284,9 @@ const MenuItemForm = ({ item, onSave, onCancel }) => {
         e.preventDefault();
         setIsSubmitting(true);
         
-        // 將勾選的選項轉換為逗號分隔的字串
         const optionsString = Object.keys(availableOptions).filter(key => availableOptions[key]).join(',');
 
-        // 根據是新增還是編輯，決定 API 和 payload
         if (item.isNew) {
-            // 新增模式 (AI 翻譯)
             const payload = {
                 name_zh: formData.name.zh,
                 description_zh: formData.description.zh,
@@ -294,7 +301,6 @@ const MenuItemForm = ({ item, onSave, onCancel }) => {
                 body: JSON.stringify(payload),
             });
         } else {
-            // 編輯模式
             const payload = { ...formData, price: parseInt(formData.price, 10), options: optionsString };
             await fetch(`${API_URL}/api/menu_items/${item.id}`, {
                 method: 'PUT',
@@ -363,3 +369,5 @@ const MenuItemForm = ({ item, onSave, onCancel }) => {
         </div>
     );
 };
+
+export default AdminPage;
