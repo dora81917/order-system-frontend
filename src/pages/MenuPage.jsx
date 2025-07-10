@@ -104,7 +104,7 @@ export default function MenuPage() {
             <div className="flex space-x-2 overflow-x-auto px-4 py-3">
               {categoryKeysInOrder.map(key => {
                 const nameObj = key === 'all' ? { zh: '全部', en: 'All', ja: 'すべて', ko: '전체' } : categories.find(c => c.key === key)?.name;
-                if (!nameObj || (key !== 'all' && !menuData[key])) return null;
+                if (!nameObj || (key !== 'all' && (!menuData[key] || menuData[key].length === 0))) return null;
                 return (
                   <button key={key} onClick={() => setActiveCategory(key)} className={`py-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors duration-200 rounded-full ${activeCategory === key ? 'text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                   style={activeCategory === key ? {backgroundColor: 'var(--theme-primary-color)'} : {}}
